@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"go/build"
 	"io"
 	"io/ioutil"
 	"os"
@@ -63,7 +62,7 @@ var (
 	addGormAnnotation     = goopt.Flag([]string{"--gorm"}, []string{}, "Add gorm annotations (tags)", "")
 	addProtobufAnnotation = goopt.Flag([]string{"--protobuf"}, []string{}, "Add protobuf annotations (tags)", "")
 	protoNameFormat       = goopt.String([]string{"--proto-fmt"}, "snake", "proto name format [snake | camel | lower_camel | none]")
-	gogoProtoImport       = goopt.String([]string{"--gogo-proto"}, "", "location of gogo import ")
+	protoArgs             = goopt.String([]string{"--proto-args"}, "", "arguments for protoc ")
 
 	addDBAnnotation = goopt.Flag([]string{"--db"}, []string{}, "Add db annotations (tags)", "")
 	useGureguTypes  = goopt.Flag([]string{"--guregu"}, []string{}, "Add guregu null types", "")
@@ -804,7 +803,7 @@ func generateProtobufDefinitionFile(conf *dbmeta.Config, data map[string]interfa
 }
 
 func createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile string) ([]string, error) {
-	if *gogoProtoImport != "" {
+	/*if *gogoProtoImport != "" {
 		if !dbmeta.Exists(*gogoProtoImport) {
 			fmt.Print(au.Red(fmt.Sprintf("%s does not exist on path - install with\ngo get -u github.com/gogo/protobuf/proto\n\n", *gogoProtoImport)))
 			return nil, fmt.Errorf("supplied gogo proto location does  not exist")
@@ -814,47 +813,44 @@ func createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile string) ([]st
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		gopath = build.Default.GOPATH
-	}
+	}*/
 
-	srcPath := filepath.Join(gopath, "src")
-	gogoPath := filepath.Join(gopath, "src/github.com/gogo/protobuf/gogoproto/gogo.proto")
-	gogoImportExists := dbmeta.Exists(gogoPath)
+	//srcPath := filepath.Join(gopath, "src")
+	//gogoPath := filepath.Join(gopath, "src/github.com/gogo/protobuf/gogoproto/gogo.proto")
+	//gogoImportExists := dbmeta.Exists(gogoPath)
 
 	// fmt.Printf("path    : %s   srcDirExists: %t\n", srcPath, srcDirExists)
 	// fmt.Printf("gogoPath: %s   gogoImportExists: %t\n", gogoPath, gogoImportExists)
 
-	if !gogoImportExists {
+	/*if !gogoImportExists {
 		fmt.Print(au.Red("github.com/gogo/protobuf/gogoproto/gogo.proto does not exist on path - install with\ngo get -u github.com/gogo/protobuf/proto\n\n"))
 		return nil, fmt.Errorf("github.com/gogo/protobuf/gogoproto/gogo.proto does not exist")
-	}
+	}*/
 
-	*gogoProtoImport = srcPath
+	//*gogoProtoImport = srcPath
 
-	fmt.Printf("----------------------------\n")
+	/*fmt.Printf("----------------------------\n")
 
 	args := []string{
-		fmt.Sprintf("-I%s", *gogoProtoImport),
+
 		fmt.Sprintf("-I%s", protoBufDir),
 
-		fmt.Sprintf("--gogo_out=plugins=grpc,Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,Mmodel.proto:%s", protoBufOutDir),
-		// fmt.Sprintf("--gogo_out=plugins=grpc:%s", protoBufOutDir),
+		fmt.Sprintf(`--gogo_out=plugins=grpc,
+			Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,
+			Mgoogle/protobuf/duration.proto=github.com/gogo/protobuf/types,
+			Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,
+			Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,
+			Mmodel.proto:%s`, protoBufOutDir),
 		fmt.Sprintf("%s", protoBufFile),
-	}
+	}*/
+	args := protoArgs
 
-	return args, nil
+	return strings.Split(*args, " "), nil
 }
 
-// CompileProtoC exec protoc for proto file, returns stdout result or error
 func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, error) {
-	args, err := createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile)
-	if err != nil {
-		return "", err
-	}
-
-	cmd := exec.Command("protoc", args...)
-
-	cmdLineArgs := strings.Join(args, " ")
-	fmt.Printf("protoc %s\n", cmdLineArgs)
+	cmd := exec.Command("protoc", *protoArgs)
+	fmt.Printf("protoc %s\n", protoArgs)
 
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
@@ -865,6 +861,29 @@ func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, er
 
 	return string(stdoutStderr), nil
 }
+
+// CompileProtoC exec protoc for proto file, returns stdout result or error
+/*func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, error) {
+	args, err := createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("protoc", args...)
+
+	cmdLineArgs := strings.Join(args, " ")
+
+	fmt.Printf("protoc %s\n", cmdLineArgs)
+
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Print(au.Red(fmt.Sprintf("error calling protoc: %T %v\n", err, err)))
+		fmt.Print(au.Red(fmt.Sprintf("%s\n", stdoutStderr)))
+		return "", err
+	}
+
+	return string(stdoutStderr), nil
+}*/
 
 // GoFmt exec gofmt for a code dir
 func GoFmt(codeDir string) (string, error) {
