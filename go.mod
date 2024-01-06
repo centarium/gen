@@ -1,4 +1,4 @@
-module github.com/smallnest/gen
+module github.com/centarium/gen
 
 go 1.16
 
