@@ -767,7 +767,7 @@ func generateProtobufDefinitionFile(conf *dbmeta.Config, data map[string]interfa
 		os.Exit(1)
 	}
 
-	compileOutput, err := CompileProtoC(*outDir, moduleDir, filepath.Join(*outDir, protofile))
+	compileOutput, err := CompileProtoC(*outDir, moduleDir, fmt.Sprintf("%s/%s", *outDir, protofile))
 	if err != nil {
 		fmt.Print(au.Red(fmt.Sprintf("Error compiling proto file %v\n", err)))
 		return err
@@ -843,14 +843,28 @@ func createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile string) ([]st
 			Mmodel.proto:%s`, protoBufOutDir),
 		fmt.Sprintf("%s", protoBufFile),
 	}*/
-	args := protoArgs
+	args := []string{
+		*protoArgs,
+		protoBufFile,
+	}
 
-	return strings.Split(*args, " "), nil
+	return args, nil
 }
 
 func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, error) {
-	cmd := exec.Command("protoc", *protoArgs)
-	fmt.Printf("protoc %s\n", protoArgs)
+	args, err := createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile)
+	if err != nil {
+		return "", err
+	}
+
+	protocArgs := strings.Split(args[0], " ")
+	protocArgs = append(protocArgs, protoBufFile)
+
+	cmd := exec.Command("protoc", protocArgs...)
+
+	cmdLineArgs := strings.Join(protocArgs, " ")
+
+	fmt.Printf("protoc %s\n", cmdLineArgs)
 
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {

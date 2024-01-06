@@ -8,6 +8,16 @@ import (
 	"github.com/jimsmart/schema"
 )
 
+func GetCheckConstraintType(checkColumnValue string) CheckConstraint {
+	if strings.Contains(checkColumnValue, "((number > 0))") {
+		return NumberNonZero
+	}
+	if strings.Contains(checkColumnValue, "((name <> ''::text))") {
+		return StringNonZero
+	}
+	return NotDefined
+}
+
 // LoadPostgresMeta fetch db meta data for Postgres database
 func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTableMeta, error) {
 	m := &dbTableMeta{
@@ -45,11 +55,13 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 		var maxLen int64
 
 		maxLen = -1
+		check := NotDefined
 		colInfo, ok := colInfo[v.Name()]
 		if ok {
 			nullable = colInfo.IsNullable == "YES"
 			isAutoIncrement = colInfo.IsIdentity == "YES"
 			isPrimaryKey = colInfo.PrimaryKey
+			check = GetCheckConstraintType(colInfo.Checks)
 
 			if colInfo.ColumnDefault != nil {
 				defaultVal = cleanupDefault(fmt.Sprintf("%v", colInfo.ColumnDefault))
@@ -79,6 +91,7 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 			columnLen:        maxLen,
 			columnType:       definedType,
 			defaultVal:       defaultVal,
+			Check:            check,
 		}
 
 		m.columns[i] = colMeta
@@ -94,12 +107,11 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 				v.isAutoIncrement = true
 			}
 		}
-	}
-	for _, v := range m.columns {
 		if strings.HasPrefix(v.DatabaseTypeName(), "_") {
 			v.isArray = true
 		}
 	}
+
 	return m, nil
 }
 
