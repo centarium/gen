@@ -843,9 +843,12 @@ func createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile string) ([]st
 			Mmodel.proto:%s`, protoBufOutDir),
 		fmt.Sprintf("%s", protoBufFile),
 	}*/
-	args := protoArgs
+	args := []string{
+		*protoArgs,
+		protoBufFile,
+	}
 
-	return strings.Split(*args, " "), nil
+	return args, nil
 }
 
 func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, error) {
