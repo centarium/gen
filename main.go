@@ -857,11 +857,13 @@ func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, er
 		return "", err
 	}
 
-	cmd := exec.Command("protoc", args...)
+	protocArgs := strings.Split(args[0], " ")
+	protocArgs = append(protocArgs, protoBufFile)
 
-	cmdLineArgs := strings.Join(args, " ")
+	cmd := exec.Command("protoc", protocArgs...)
 
-	fmt.Printf("ls ./")
+	cmdLineArgs := strings.Join(protocArgs, " ")
+
 	fmt.Printf("protoc %s\n", cmdLineArgs)
 
 	stdoutStderr, err := cmd.CombinedOutput()
