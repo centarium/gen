@@ -849,8 +849,16 @@ func createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile string) ([]st
 }
 
 func CompileProtoC(protoBufDir, protoBufOutDir, protoBufFile string) (string, error) {
-	cmd := exec.Command("protoc", *protoArgs)
-	fmt.Printf("protoc %s\n", protoArgs)
+	args, err := createProtocCmdLine(protoBufDir, protoBufOutDir, protoBufFile)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command("protoc", args...)
+
+	cmdLineArgs := strings.Join(args, " ")
+
+	fmt.Printf("protoc %s\n", cmdLineArgs)
 
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
