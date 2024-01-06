@@ -22,7 +22,7 @@ import (
 	"github.com/logrusorgru/aurora"
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/smallnest/gen/dbmeta"
+	"github.com/centarium/gen/dbmeta"
 )
 
 var (
