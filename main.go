@@ -767,7 +767,7 @@ func generateProtobufDefinitionFile(conf *dbmeta.Config, data map[string]interfa
 		os.Exit(1)
 	}
 
-	compileOutput, err := CompileProtoC(*outDir, moduleDir, filepath.Join(*outDir, protofile))
+	compileOutput, err := CompileProtoC(*outDir, moduleDir, fmt.Sprintf("%s/%s", *outDir, protofile))
 	if err != nil {
 		fmt.Print(au.Red(fmt.Sprintf("Error compiling proto file %v\n", err)))
 		return err
