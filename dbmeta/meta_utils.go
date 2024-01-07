@@ -116,9 +116,9 @@ LEFT JOIN (
     SELECT DISTINCT(ccu.column_name) as column_name, concat_ws( ',', ch_c.check_clause) as checks
     FROM information_schema.constraint_column_usage  ccu
              LEFT JOIN information_schema.check_constraints ch_c ON ch_c.constraint_name = ccu.constraint_name
-    WHERE ccu.table_name = 'lines'
+    WHERE ccu.table_name = '%s'
 ) as ch_c ON ch_c.column_name = c.column_name
-WHERE c.table_name = 'lines'
+WHERE c.table_name = '%s'
 ORDER BY table_name, ordinal_position;
 `, tableName)
 
