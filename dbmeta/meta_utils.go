@@ -110,7 +110,7 @@ func LoadTableInfoFromPostgresInformationSchema(db *sql.DB, tableName string) (p
 	identitySQL := fmt.Sprintf(`
 SELECT c.TABLE_CATALOG, c.table_schema, c.table_name, c.ordinal_position, c.column_name,
        c.data_type, c.character_maximum_length, c.column_default, c.is_nullable, c.is_identity,
-       ch_c.checks
+       COALESCE(ch_c.checks,'')
 FROM information_schema.columns c
 LEFT JOIN (
     SELECT DISTINCT(ccu.column_name) as column_name, concat_ws( ',', ch_c.check_clause) as checks
@@ -120,7 +120,7 @@ LEFT JOIN (
 ) as ch_c ON ch_c.column_name = c.column_name
 WHERE c.table_name = '%s'
 ORDER BY table_name, ordinal_position;
-`, tableName)
+`, tableName, tableName)
 
 	res, err := db.Query(identitySQL)
 	if err != nil {
