@@ -23,6 +23,14 @@ type metaDataLoader func(db *sql.DB, sqlType, sqlDatabase, tableName string) (Db
 var metaDataFuncs = make(map[string]metaDataLoader)
 var sqlMappings = make(map[string]*SQLMapping)
 
+type CheckConstraint int
+
+const (
+	NotDefined CheckConstraint = iota
+	NumberNonZero
+	StringNonZero
+)
+
 func init() {
 	metaDataFuncs["sqlite3"] = LoadSqliteMeta
 	metaDataFuncs["sqlite"] = LoadSqliteMeta
@@ -97,6 +105,7 @@ type columnMeta struct {
 	comment          string
 	databaseTypeName string
 	name             string
+	Check            CheckConstraint
 }
 
 // ColumnType column type
@@ -171,6 +180,19 @@ func (ci *columnMeta) DatabaseTypePretty() string {
 	return ci.columnType
 }
 
+// GetCheckType constraint check type
+func (ci *columnMeta) GetCheckType() CheckConstraint {
+	return ci.Check
+}
+
+func (ci *columnMeta) IsNumberNonZero() bool {
+	return ci.Check == NumberNonZero
+}
+
+func (ci *columnMeta) IsStringNonZero() bool {
+	return ci.Check == StringNonZero
+}
+
 // DbTableMeta table meta data
 type DbTableMeta interface {
 	Columns() []ColumnMeta
@@ -196,6 +218,9 @@ type ColumnMeta interface {
 	Comment() string
 	ColumnLength() int64
 	DefaultValue() string
+	GetCheckType() CheckConstraint
+	IsNumberNonZero() bool
+	IsStringNonZero() bool
 }
 
 type dbTableMeta struct {
@@ -254,6 +279,7 @@ type ModelInfo struct {
 	DBMeta          DbTableMeta
 	Instance        interface{}
 	CodeFields      []*FieldInfo
+	Check           CheckConstraint
 }
 
 // Notes notes on table generation
@@ -298,6 +324,7 @@ type FieldInfo struct {
 	XMLAnnotation         string
 	DBAnnotation          string
 	GoGoMoreTags          string
+	Check                 CheckConstraint
 }
 
 // GetFunctionName get function name
@@ -329,6 +356,7 @@ func (c *Config) GenerateFieldsTypes(dbMeta DbTableMeta) ([]*FieldInfo, error) {
 
 		fi := &FieldInfo{
 			Index: i,
+			Check: col.GetCheckType(),
 		}
 
 		valueType, err := SQLTypeToGoType(strings.ToLower(col.DatabaseTypeName()), col.Nullable(), c.UseGureguTypes)
