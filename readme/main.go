@@ -162,6 +162,7 @@ func initialize(conf *dbmeta.Config) {
 
 	conf.SQLType = *sqlType
 	conf.SQLDatabase = *sqlDatabase
+	conf.ProtoGoPackage = *sqlDatabase
 	conf.ModelPackageName = modelPackageName
 	conf.DaoPackageName = daoPackageName
 	conf.APIPackageName = apiPackageName

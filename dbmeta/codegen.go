@@ -561,6 +561,7 @@ func (c *Config) WriteTemplate(genTemplate *GenTemplate, data map[string]interfa
 	data["Parent"] = parent
 
 	data["DatabaseName"] = c.SQLDatabase
+	data["protoGoPackage"] = c.ProtoGoPackage
 	data["module"] = c.Module
 
 	data["modelFQPN"] = c.ModelFQPN
@@ -883,6 +884,7 @@ type Config struct {
 	SQLType               string
 	SQLConnStr            string
 	SQLDatabase           string
+	ProtoGoPackage        string
 	Module                string
 	ModelPackageName      string
 	ModelFQPN             string

@@ -29,6 +29,7 @@ var (
 	sqlType          = goopt.String([]string{"--sqltype"}, "mysql", "sql database type such as [ mysql, mssql, postgres, sqlite, etc. ]")
 	sqlConnStr       = goopt.String([]string{"-c", "--connstr"}, "nil", "database connection string")
 	sqlDatabase      = goopt.String([]string{"-d", "--database"}, "nil", "Database to for connection")
+	protoGoPackage   = goopt.String([]string{"--proto_go_package"}, "/tmp_proto/model", "Protobuf go_package")
 	sqlTable         = goopt.String([]string{"-t", "--table"}, "", "Table to build struct from")
 	excludeSQLTables = goopt.String([]string{"-x", "--exclude"}, "", "Table(s) to exclude")
 	templateDir      = goopt.String([]string{"--templateDir"}, "", "Template Dir")
@@ -347,6 +348,7 @@ func initialize(conf *dbmeta.Config) {
 
 	conf.SQLType = *sqlType
 	conf.SQLDatabase = *sqlDatabase
+	conf.ProtoGoPackage = *protoGoPackage
 
 	conf.AddJSONAnnotation = *addJSONAnnotation
 	conf.AddXMLAnnotation = *addXMLAnnotation
@@ -447,6 +449,7 @@ func executeCustomScript(conf *dbmeta.Config) error {
 
 func execTemplate(conf *dbmeta.Config, genTemplate *dbmeta.GenTemplate, data map[string]interface{}) error {
 	data["DatabaseName"] = *sqlDatabase
+	data["protoGoPackage"] = *protoGoPackage
 	data["module"] = *module
 	data["modelFQPN"] = conf.ModelFQPN
 	data["daoFQPN"] = conf.DaoFQPN

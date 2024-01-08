@@ -2,6 +2,7 @@
 
    "CommandLine"          [string] "/tmp/go-build728666148/b001/exe/gen --sqltype=sqlite3 --connstr ./sample.db --database main --module github.com/alexj212/generated --verbose --overwrite --out ./ --exec=../sample.gen"
    "DatabaseName"         [string] "main"
+   "protoGoPackage"       [string] "/tmp_proto/model"
    "SwaggerInfo"          [*main.swaggerInfo] &main.swaggerInfo{Version:"1.0", Host:"localhost:8080", BasePath:"/", Title:"Sample CRUD api for main db", Description:"Sample CRUD api for main db", TOS:"", ContactName:"Me", ContactUrl:"http://me.com/terms.html", ContactEmail:"me@me.com"}
    "apiFQPN"              [string] "github.com/alexj212/generated/api"
    "apiPackageName"       [string] "api"
