@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/iancoleman/strcase"
@@ -325,6 +326,15 @@ type FieldInfo struct {
 	DBAnnotation          string
 	GoGoMoreTags          string
 	Check                 CheckConstraint
+}
+
+func (f *FieldInfo) GetGoFieldNameGRPCFieldName() string {
+	if f.GoFieldName == "" {
+		return f.GoFieldName
+	}
+	r := []rune(strings.ToLower(f.GoFieldName))
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
 }
 
 // GetFunctionName get function name
