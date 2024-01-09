@@ -1,0 +1,144 @@
+package {{.Config.GrpcPackageName}}
+
+
+import (
+    "context"
+    "fmt"
+    "io/ioutil"
+    "log"
+    "os"
+
+    "{{.module}}/{{.protoGoPackage}}/{{.daoPackageName}}"
+    "{{.module}}/{{.protoGoPackage}}"
+
+    "gopkg.in/yaml.v2"
+)
+
+// Server server instance
+type Server struct {
+    {{.protoGoPackage}}.UnimplementedBackendServer
+}
+
+
+
+{{ range $tableName, $tableInfo := .tableInfos }}
+
+
+// GetAll{{ $tableInfo.StructName }} is a RPC method to get a slice of record(s) from {{.TableName}} table in the {{$.DatabaseName}} database
+func (s *Server) GetAll{{ $tableInfo.StructName }}(context context.Context, request *{{$.protoGoPackage}}.GetAll{{ $tableInfo.StructName }}Request) (*{{$.protoGoPackage}}.GetAll{{ $tableInfo.StructName }}Response, error) {
+
+    result, totalRows, err :=  {{$.daoPackageName}}.GetAll{{$tableInfo.StructName}}(context, request.Page, request.PageSize, request.Order)
+    if err != nil {
+        response := &{{$.protoGoPackage}}.GetAll{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Error, Message: fmt.Sprintf("%v", err)}}
+        return response, nil
+    }
+
+    response := &{{$.protoGoPackage}}.GetAll{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Success}, Page: request.Page, PageSize: request.PageSize, Data: result, TotalRecords: int64(totalRows) }
+    return response, nil
+}
+
+// Get{{.StructName}} is a RPC method to get a single record from the {{.TableName}} table in the {{$.DatabaseName}} database
+func (s *Server) Get{{ $tableInfo.StructName }}(context context.Context, request *{{$.protoGoPackage}}.Get{{ $tableInfo.StructName }}Request) (*{{$.protoGoPackage}}.Get{{ $tableInfo.StructName }}Response, error) {
+
+    result, err := {{$.daoPackageName}}.Get{{$tableInfo.StructName}}(context,{{range $field := .CodeFields}} {{ if $field.PrimaryKeyArgName }} request.{{$field.GetGoFieldNameGRPCFieldName}},{{end}}{{end -}})
+    if err != nil {
+        response := &{{$.protoGoPackage}}.Get{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Error, Message: fmt.Sprintf("%v", err)}}
+        return response, nil
+    }
+
+    response := &{{$.protoGoPackage}}.Get{{ $tableInfo.StructName }}Response{}
+    response.Data = result
+    response.Result=&{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Success}
+    return response, nil
+}
+
+// Add{{.StructName}} is a RPC method to add a single record to {{.TableName}} table in the {{$.DatabaseName}} database
+func (s *Server) Add{{ $tableInfo.StructName }}(context context.Context, request *{{$.protoGoPackage}}.Add{{ $tableInfo.StructName }}Request) (*{{$.protoGoPackage}}.Add{{ $tableInfo.StructName }}Response, error) {
+
+    result, rowsAffected, err := {{$.daoPackageName}}.Add{{$tableInfo.StructName}}(context, request.Data)
+    if err != nil {
+        response := &{{$.protoGoPackage}}.Add{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Error, Message: fmt.Sprintf("%v", err)}}
+        return response, nil
+    }
+
+    response := &{{$.protoGoPackage}}.Add{{ $tableInfo.StructName }}Response{}
+    response.Data = result
+    response.Result = &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Success}
+    response.RowsAffected = rowsAffected
+    return response, nil
+}
+
+// Update{{.StructName}} is a RPC method to Update a single record from {{.TableName}} table in the {{$.DatabaseName}} database
+func (s *Server) Update{{ $tableInfo.StructName }}(context context.Context, request *{{$.protoGoPackage}}.Update{{ $tableInfo.StructName }}Request) (*{{$.protoGoPackage}}.Update{{ $tableInfo.StructName }}Response, error) {
+
+    result, rowsAffected, err := {{$.daoPackageName}}.Update{{$tableInfo.StructName}}(context,
+        {{range $field := .CodeFields}} {{ if $field.PrimaryKeyArgName }} request.Data.{{$field.GetGoFieldNameGRPCFieldName}},{{end}}{{end}}
+        request.Data)
+    if err != nil {
+        response := &{{$.protoGoPackage}}.Update{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Error, Message: fmt.Sprintf("%v", err)}}
+        return response, nil
+    }
+
+    response := &{{$.protoGoPackage}}.Update{{ $tableInfo.StructName }}Response{}
+    response.Data = result
+    response.Result = &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Success}
+    response.RowsAffected = rowsAffected
+    return response, nil
+}
+
+// Delete{{.StructName}} is a RPC method to delete a single record from {{.TableName}} table in the {{$.DatabaseName}} database
+func (s *Server) Delete{{ $tableInfo.StructName }}(context context.Context, request *{{$.protoGoPackage}}.Delete{{ $tableInfo.StructName }}Request) (*{{$.protoGoPackage}}.Delete{{ $tableInfo.StructName }}Response, error) {
+
+    rowsAffected, err := {{$.daoPackageName}}.Delete{{$tableInfo.StructName}}(context,{{range $field := .CodeFields}} {{ if $field.PrimaryKeyArgName }} request.{{$field.GetGoFieldNameGRPCFieldName}},{{end}}{{end -}})
+    if err != nil {
+        response := &{{$.protoGoPackage}}.Delete{{ $tableInfo.StructName }}Response{Result: &{{$.protoGoPackage}}.Result{Code: {{$.protoGoPackage}}.Result_Error, Message: fmt.Sprintf("%v", err)}}
+        return response, nil
+    }
+
+    response := &{{$.protoGoPackage}}.Delete{{ $tableInfo.StructName }}Response{RowsAffected: rowsAffected, Result: &{{$.protoGoPackage}}.Result{Code:   {{$.protoGoPackage}}.Result_Success}}
+    return response, nil
+}
+
+{{- end}}
+
+
+// ServerConfig server configuration
+type ServerConfig struct {
+    ListenAddr  string `yaml:"listen_on"`
+    DatabaseURI string `yaml:"db_uri"`
+    MaxMessageSizeBytes int `yaml:"max_Messagesize_bytes"`
+    ServerCert string `yaml:"server_cert"`
+    ServerKey  string `yaml:"server_key"`
+    CACert     string `yaml:"ca_cert"`
+}
+
+// LoadConfig load server configuration from file pointed to from BACKEND_CONFIG env variable
+func LoadConfig() ServerConfig {
+    configPath := os.Getenv("BACKEND_CONFIG")
+    content, err := ioutil.ReadFile(configPath)
+    if err != nil {
+        log.Fatalf(
+            "Error loading config from BACKEND_CONFIG=%s: %v",
+            configPath,
+            err,
+        )
+    }
+
+    config := ServerConfig{}
+    err = yaml.Unmarshal([]byte(content), &config)
+    if err != nil {
+        log.Fatalf("Error parsing config: %v", err)
+    }
+    return config
+}
+
+// NewServerFromConfig create a server from a ServerConfig
+func NewServerFromConfig(cfg ServerConfig) *Server {
+
+    return &Server{
+    }
+}
+
+// Cleanup server resources
+func (s *Server) Cleanup() {
+}

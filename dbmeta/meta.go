@@ -337,6 +337,10 @@ func (f *FieldInfo) GetGoFieldNameGRPCFieldName() string {
 	return string(r)
 }
 
+func (f *FieldInfo) IsTime() bool {
+	return f.GoFieldType == "time.Time"
+}
+
 // GetFunctionName get function name
 func GetFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()

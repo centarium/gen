@@ -496,7 +496,7 @@ func generate(conf *dbmeta.Config) error {
 
 	*jsonNameFormat = strings.ToLower(*jsonNameFormat)
 	*xmlNameFormat = strings.ToLower(*xmlNameFormat)
-	modelDir := filepath.Join(*outDir, *modelPackageName)
+	//modelDir := filepath.Join(*outDir, *modelPackageName)
 	apiDir := filepath.Join(*outDir, *apiPackageName)
 	daoDir := filepath.Join(*outDir, *daoPackageName)
 
@@ -506,11 +506,12 @@ func generate(conf *dbmeta.Config) error {
 		return err
 	}
 
-	err = os.MkdirAll(modelDir, 0777)
-	if err != nil && !*overwrite {
-		fmt.Print(au.Red(fmt.Sprintf("unable to create modelDir: %s error: %v\n", modelDir, err)))
-		return err
-	}
+	/*
+		err = os.MkdirAll(modelDir, 0777)
+		if err != nil && !*overwrite {
+			fmt.Print(au.Red(fmt.Sprintf("unable to create modelDir: %s error: %v\n", modelDir, err)))
+			return err
+		}*/
 
 	if *daoGenerate {
 		err = os.MkdirAll(daoDir, 0777)
@@ -527,8 +528,8 @@ func generate(conf *dbmeta.Config) error {
 			return err
 		}
 	}
-	var ModelTmpl *dbmeta.GenTemplate
-	var ModelBaseTmpl *dbmeta.GenTemplate
+	//var ModelTmpl *dbmeta.GenTemplate
+	//var ModelBaseTmpl *dbmeta.GenTemplate
 	var ControllerTmpl *dbmeta.GenTemplate
 	var DaoTmpl *dbmeta.GenTemplate
 
@@ -565,14 +566,15 @@ func generate(conf *dbmeta.Config) error {
 		return err
 	}
 
-	if ModelTmpl, err = LoadTemplate("model.go.tmpl"); err != nil {
-		fmt.Print(au.Red(fmt.Sprintf("Error loading template %v\n", err)))
-		return err
-	}
-	if ModelBaseTmpl, err = LoadTemplate("model_base.go.tmpl"); err != nil {
-		fmt.Print(au.Red(fmt.Sprintf("Error loading template %v\n", err)))
-		return err
-	}
+	/*
+		if ModelTmpl, err = LoadTemplate("model.go.tmpl"); err != nil {
+			fmt.Print(au.Red(fmt.Sprintf("Error loading template %v\n", err)))
+			return err
+		}
+		if ModelBaseTmpl, err = LoadTemplate("model_base.go.tmpl"); err != nil {
+			fmt.Print(au.Red(fmt.Sprintf("Error loading template %v\n", err)))
+			return err
+		}*/
 
 	*jsonNameFormat = strings.ToLower(*jsonNameFormat)
 	*xmlNameFormat = strings.ToLower(*xmlNameFormat)
@@ -590,12 +592,13 @@ func generate(conf *dbmeta.Config) error {
 
 		modelInfo := conf.CreateContextForTableFile(tableInfo)
 
-		modelFile := filepath.Join(modelDir, CreateGoSrcFileName(tableName))
-		err = conf.WriteTemplate(ModelTmpl, modelInfo, modelFile)
-		if err != nil {
-			fmt.Print(au.Red(fmt.Sprintf("Error writing file: %v\n", err)))
-			os.Exit(1)
-		}
+		/*
+			modelFile := filepath.Join(modelDir, CreateGoSrcFileName(tableName))
+			err = conf.WriteTemplate(ModelTmpl, modelInfo, modelFile)
+			if err != nil {
+				fmt.Print(au.Red(fmt.Sprintf("Error writing file: %v\n", err)))
+				os.Exit(1)
+			}*/
 
 		if *restAPIGenerate {
 			restFile := filepath.Join(apiDir, CreateGoSrcFileName(tableName))
@@ -634,11 +637,11 @@ func generate(conf *dbmeta.Config) error {
 		}
 	}
 
-	err = conf.WriteTemplate(ModelBaseTmpl, data, filepath.Join(modelDir, "model_base.go"))
+	/*err = conf.WriteTemplate(ModelBaseTmpl, data, filepath.Join(modelDir, "model_base.go"))
 	if err != nil {
 		fmt.Print(au.Red(fmt.Sprintf("Error writing file: %v\n", err)))
 		os.Exit(1)
-	}
+	}*/
 
 	if *modGenerate {
 		err = conf.WriteTemplate(GoModuleTmpl, data, filepath.Join(*outDir, "go.mod"))

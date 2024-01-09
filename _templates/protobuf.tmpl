@@ -1,14 +1,9 @@
 syntax = "proto3";
 
-package {{.DatabaseName}};
-import "google/protobuf/timestamp.proto";
-import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+package {{.protoGoPackage}};
+import "validate/validate.proto";
 
-
-option (gogoproto.populate_all) = true;
-option go_package = "{{.protoGoPackage}}";
-option (gogoproto.equal_all) = true;
-option (gogoproto.gostring_all) = true;
+option go_package = "/{{.protoGoPackage}}";
 
 message Result {
     enum result_type {
@@ -16,21 +11,10 @@ message Result {
         Success = 1;
     }
 
-    result_type code = 1 [(gogoproto.customname) = 'Code', (gogoproto.moretags) = 'json:"code" xml:"code" db:"code"'];
-    string message = 2 [(gogoproto.customname) = 'Message', (gogoproto.moretags) = 'json:"message" xml:"message" db:"message"'];
+    result_type code = 1;
+    string message = 2;
 }
 
-
-message packet {
-    enum packet_type_t {
-        Error = 0;
-         {{ range $tableName, $tableInfo := .tableInfos }}
-        //Pkt{{ $tableInfo.StructName }} = {{$tableInfo.Index}};{{- end}}
-    }
-
-    packet_type_t id = 2;
-    bytes data = 3;
-}
 service Backend {
 {{ range $tableName, $tableInfo := .tableInfos }}
     rpc GetAll{{ $tableInfo.StructName }}(GetAll{{ $tableInfo.StructName }}Request) returns (GetAll{{ $tableInfo.StructName }}Response);
@@ -44,15 +28,16 @@ service Backend {
 {{ range $tableName, $tableInfo := .tableInfos }}
 // table: {{$tableName}}
 message {{ $tableInfo.StructName }} {
-    option (gogoproto.goproto_unrecognized) = false;
-    option (gogoproto.goproto_unkeyed) = false;
-    option (gogoproto.goproto_sizecache) = false;
-
-{{ range $i, $field := $tableInfo.CodeFields }}
-    // Column: {{$field.ColumnMeta.String}}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{  $field.ProtobufPos}} [(gogoproto.customname) = '{{ $field.GoFieldName}}', (gogoproto.moretags) = '{{ escape $field.GoGoMoreTags}}'];{{- end}}
+{{- range $i, $field := $tableInfo.CodeFields -}}
+      {{ $validation := "" -}}
+      {{ if $field.ColumnMeta.IsNumberNonZero -}}
+        {{ $validation = printf "[(validate.rules).%s.gt = 0]" $field.ProtobufType -}}
+      {{ else if $field.ColumnMeta.IsStringNonZero -}}
+        {{ $validation = "[(validate.rules).string.min_len = 1]" -}}
+      {{- end }}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{  $field.ProtobufPos}}{{ $validation }};
+{{- end}}
 }
-
 
 message GetAll{{ $tableInfo.StructName }}Request {
     int64 page = 1;
@@ -70,8 +55,8 @@ message GetAll{{ $tableInfo.StructName }}Response {
 
 
 message Get{{ $tableInfo.StructName }}Request {
-{{ $fieldPos := set 0 }}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc}}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}} [(gogoproto.customname) = "{{ $field.GoFieldName}}"];{{- end }}{{- end}}
+{{- $fieldPos := set 0 -}}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc}}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}};{{- end }}{{- end}}
 }
 
 message Get{{ $tableInfo.StructName }}Response {
@@ -99,8 +84,8 @@ message Update{{ $tableInfo.StructName }}Response {
 }
 
 message Delete{{ $tableInfo.StructName }}Request {
-{{ $fieldPos := set 0 }}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc}}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}} [(gogoproto.customname) = "{{ $field.GoFieldName}}"];{{- end }}{{- end}}
+{{- $fieldPos := set 0 -}}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc }}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}};{{- end }}{{- end}}
 }
 
 message Delete{{ $tableInfo.StructName }}Response {
@@ -109,12 +94,3 @@ message Delete{{ $tableInfo.StructName }}Response {
 }
 
 {{ end}}
-
-
-
-
-/*
-{{ range $key, $value := . }}
-   {{ printf "%#-20v" $key }}   {{ printf "[%T] %#v" $value $value }}{{ end }}
-
- */
