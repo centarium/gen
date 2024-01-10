@@ -294,14 +294,14 @@ type ModelInfo struct {
 	Check           CheckConstraint
 }
 
-func (m *ModelInfo) GetRequiredFields() []string {
+func (m *ModelInfo) GetRequiredFields() string {
 	var requiredFields []string
 	for _, val := range m.CodeFields {
 		if val.ColumnMeta.IsRequired() {
 			requiredFields = append(requiredFields, val.ProtobufFieldName)
 		}
 	}
-	return requiredFields
+	return strings.Join(requiredFields, "\",\"")
 }
 
 // Notes notes on table generation
