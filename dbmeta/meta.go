@@ -294,6 +294,16 @@ type ModelInfo struct {
 	Check           CheckConstraint
 }
 
+func (m *ModelInfo) GetRequiredFields() []string {
+	var requiredFields []string
+	for _, val := range m.CodeFields {
+		if val.ColumnMeta.IsRequired() {
+			requiredFields = append(requiredFields, val.ProtobufFieldName)
+		}
+	}
+	return requiredFields
+}
+
 // Notes notes on table generation
 func (m *ModelInfo) Notes() string {
 	buf := bytes.Buffer{}
@@ -345,6 +355,43 @@ type IFieldInfo interface {
 	IsInformationField() bool
 	GetGoFieldNameGRPCFieldName() string
 	IsTime() bool
+	GetValidation() []string
+}
+
+func IsIntType(fieldType string) bool {
+	var intTypes = map[string]struct{}{
+		"int32":    struct{}{},
+		"int64":    struct{}{},
+		"uint32":   struct{}{},
+		"uint64":   struct{}{},
+		"sint32":   struct{}{},
+		"sint64":   struct{}{},
+		"fixed32":  struct{}{},
+		"fixed64":  struct{}{},
+		"sfixed32": struct{}{},
+		"sfixed64": struct{}{},
+	}
+
+	_, ok := intTypes[fieldType]
+	return ok
+}
+
+func (f *FieldInfo) GetFieldTags() []string {
+	fieldTags := make([]string, 0)
+	//validation tags
+	if f.ColumnMeta.IsStringNonZero() {
+		fieldTags = append(fieldTags, "(validate.rules).string.min_len = 1")
+	}
+	if f.ColumnMeta.IsStringNonZero() {
+		fieldTags = append(fieldTags, fmt.Sprintf("(validate.rules).%s.gt = 0", f.ProtobufType))
+	}
+
+	//grpc.gateway.protoc_gen_openapiv2 tags
+	if IsIntType(f.ProtobufType) {
+		fieldTags = append(fieldTags, "(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}")
+	}
+
+	return fieldTags
 }
 
 func (f *FieldInfo) IsEnabledField() bool {
