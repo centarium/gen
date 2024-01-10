@@ -355,7 +355,7 @@ type IFieldInfo interface {
 	IsInformationField() bool
 	GetGoFieldNameGRPCFieldName() string
 	IsTime() bool
-	GetValidation() []string
+	GetFieldTags() string
 }
 
 func IsIntType(fieldType string) bool {
@@ -376,8 +376,9 @@ func IsIntType(fieldType string) bool {
 	return ok
 }
 
-func (f *FieldInfo) GetFieldTags() []string {
+func (f *FieldInfo) GetFieldTags() string {
 	fieldTags := make([]string, 0)
+
 	//validation tags
 	if f.ColumnMeta.IsStringNonZero() {
 		fieldTags = append(fieldTags, "(validate.rules).string.min_len = 1")
@@ -391,7 +392,11 @@ func (f *FieldInfo) GetFieldTags() []string {
 		fieldTags = append(fieldTags, "(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}")
 	}
 
-	return fieldTags
+	if len(fieldTags) != 0 {
+		return fmt.Sprintf("[%s]", strings.Join(fieldTags, ","))
+	}
+
+	return ""
 }
 
 func (f *FieldInfo) IsEnabledField() bool {
