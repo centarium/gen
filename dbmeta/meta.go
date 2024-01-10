@@ -195,6 +195,10 @@ func (ci *columnMeta) IsStringNonZero() bool {
 	return ci.Check == StringNonZero
 }
 
+func (ci *columnMeta) IsRequired() bool {
+	return ci.IsStringNonZero() || ci.IsNumberNonZero()
+}
+
 func (ci *columnMeta) GetColumnComment() string {
 	return ci.ColumnComment
 }
@@ -228,6 +232,7 @@ type ColumnMeta interface {
 	IsNumberNonZero() bool
 	IsStringNonZero() bool
 	GetColumnComment() string
+	IsRequired() bool
 }
 
 type dbTableMeta struct {
@@ -333,6 +338,13 @@ type FieldInfo struct {
 	GoGoMoreTags          string
 	Check                 CheckConstraint
 	ColumnComment         string
+}
+
+type IFieldInfo interface {
+	IsEnabledField() bool
+	IsInformationField() bool
+	GetGoFieldNameGRPCFieldName() string
+	IsTime() bool
 }
 
 func (f *FieldInfo) IsEnabledField() bool {
