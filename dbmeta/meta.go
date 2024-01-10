@@ -383,7 +383,7 @@ func (f *FieldInfo) GetFieldTags() string {
 	if f.ColumnMeta.IsStringNonZero() {
 		fieldTags = append(fieldTags, "(validate.rules).string.min_len = 1")
 	}
-	if f.ColumnMeta.IsStringNonZero() {
+	if f.ColumnMeta.IsNumberNonZero() {
 		fieldTags = append(fieldTags, fmt.Sprintf("(validate.rules).%s.gt = 0", f.ProtobufType))
 	}
 
