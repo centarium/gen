@@ -107,6 +107,7 @@ type columnMeta struct {
 	databaseTypeName string
 	name             string
 	Check            CheckConstraint
+	ColumnComment    string
 }
 
 // ColumnType column type
@@ -194,6 +195,10 @@ func (ci *columnMeta) IsStringNonZero() bool {
 	return ci.Check == StringNonZero
 }
 
+func (ci *columnMeta) GetColumnComment() string {
+	return ci.ColumnComment
+}
+
 // DbTableMeta table meta data
 type DbTableMeta interface {
 	Columns() []ColumnMeta
@@ -222,6 +227,7 @@ type ColumnMeta interface {
 	GetCheckType() CheckConstraint
 	IsNumberNonZero() bool
 	IsStringNonZero() bool
+	GetColumnComment() string
 }
 
 type dbTableMeta struct {
@@ -326,6 +332,15 @@ type FieldInfo struct {
 	DBAnnotation          string
 	GoGoMoreTags          string
 	Check                 CheckConstraint
+	ColumnComment         string
+}
+
+func (f *FieldInfo) IsEnabledField() bool {
+	return strings.Contains(f.ColumnComment, "Is enabled")
+}
+
+func (f *FieldInfo) IsInformationField() bool {
+	return strings.Contains(f.ColumnComment, "Information field")
 }
 
 func (f *FieldInfo) GetGoFieldNameGRPCFieldName() string {
@@ -369,8 +384,9 @@ func (c *Config) GenerateFieldsTypes(dbMeta DbTableMeta) ([]*FieldInfo, error) {
 		fieldName := col.Name()
 
 		fi := &FieldInfo{
-			Index: i,
-			Check: col.GetCheckType(),
+			Index:         i,
+			Check:         col.GetCheckType(),
+			ColumnComment: col.GetColumnComment(),
 		}
 
 		valueType, err := SQLTypeToGoType(strings.ToLower(col.DatabaseTypeName()), col.Nullable(), c.UseGureguTypes)

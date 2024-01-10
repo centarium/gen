@@ -95,7 +95,7 @@ var _ = func() error {
 		b.SetResolver("main_sqlx.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "d5d1125410fabba3c14b9f97a7018f2f"})
 		b.SetResolver("mapping.json", packr.Pointer{ForwardBox: gk, ForwardPath: "77f02d048f6eed1a3e480f2220639f05"})
 		b.SetResolver("model.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "28851f11a1e66316d1f1150914d2be3b"})
-		b.SetResolver("model_base.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "e4bd0d6c65071597f7e774df0618541d"})
+		//b.SetResolver("model_base.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "e4bd0d6c65071597f7e774df0618541d"})
 		b.SetResolver("protobuf.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "7b7749291dddd94b5eb4d0ee2c75d8bc"})
 		b.SetResolver("protomain.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "346fbc41181bdf0f31a8d024d6ffbf18"})
 		b.SetResolver("protoserver.go.tmpl", packr.Pointer{ForwardBox: gk, ForwardPath: "3adf58574e9c76acb6a937d9d849f6a7"})

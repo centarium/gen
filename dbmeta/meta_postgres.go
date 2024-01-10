@@ -56,12 +56,14 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 
 		maxLen = -1
 		check := NotDefined
+		var columnComment string
 		colInfo, ok := colInfo[v.Name()]
 		if ok {
 			nullable = colInfo.IsNullable == "YES"
 			isAutoIncrement = colInfo.IsIdentity == "YES"
 			isPrimaryKey = colInfo.PrimaryKey
 			check = GetCheckConstraintType(colInfo.Checks)
+			columnComment = colInfo.ColumnComment
 
 			if colInfo.ColumnDefault != nil {
 				defaultVal = cleanupDefault(fmt.Sprintf("%v", colInfo.ColumnDefault))
@@ -92,6 +94,7 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 			columnType:       definedType,
 			defaultVal:       defaultVal,
 			Check:            check,
+			ColumnComment:    columnComment,
 		}
 
 		m.columns[i] = colMeta
@@ -146,16 +149,3 @@ func postgresLoadPrimaryKey(db *sql.DB, tableName string, colInfo map[string]*Po
 	}
 	return nil
 }
-
-/*
-https://dataedo.com/kb/query/postgresql/list-table-default-constraints
-
-select col.table_schema,
-       col.table_name,
-       col.column_name,
-       col.column_default
-from information_schema.columns col
-where col.column_default is not null
-      and col.table_schema not in('information_schema', 'pg_catalog')
-order by col.column_name;
-*/

@@ -101,6 +101,7 @@ type PostgresInformationSchema struct {
 	IsIdentity             string
 	PrimaryKey             bool
 	Checks                 string
+	ColumnComment          string
 }
 
 // LoadTableInfoFromPostgresInformationSchema fetch info from information_schema for postgres database
@@ -110,17 +111,25 @@ func LoadTableInfoFromPostgresInformationSchema(db *sql.DB, tableName string) (p
 	identitySQL := fmt.Sprintf(`
 SELECT c.TABLE_CATALOG, c.table_schema, c.table_name, c.ordinal_position, c.column_name,
        c.data_type, c.character_maximum_length, c.column_default, c.is_nullable, c.is_identity,
-       COALESCE(ch_c.checks,'')
+       COALESCE(ch_c.checks, ''), COALESCE(comments.description, '')
 FROM information_schema.columns c
 LEFT JOIN (
     SELECT DISTINCT(ccu.column_name) as column_name, concat_ws( ',', ch_c.check_clause) as checks
     FROM information_schema.constraint_column_usage  ccu
-             LEFT JOIN information_schema.check_constraints ch_c ON ch_c.constraint_name = ccu.constraint_name
-    WHERE ccu.table_name = '%s'
+    LEFT JOIN information_schema.check_constraints ch_c ON ch_c.constraint_name = ccu.constraint_name
+    WHERE ccu.table_name = '%[1]s'
 ) as ch_c ON ch_c.column_name = c.column_name
-WHERE c.table_name = '%s'
+LEFT JOIN (
+    SELECT pgd.objsubid,st.schemaname,st.relname,pgd.description
+    FROM pg_catalog.pg_statio_all_tables AS st
+    JOIN pg_catalog.pg_description pgd on pgd.objoid = st.relid
+    WHERE st.relname = '%[1]s'
+) as comments ON comments.objsubid = c.ordinal_position and
+                 comments.schemaname = c.table_schema   and
+                 comments.relname = c.table_name
+WHERE c.table_name = '%[1]s'
 ORDER BY table_name, ordinal_position;
-`, tableName, tableName)
+`, tableName)
 
 	res, err := db.Query(identitySQL)
 	if err != nil {
@@ -130,7 +139,7 @@ ORDER BY table_name, ordinal_position;
 	for res.Next() {
 		ci := &PostgresInformationSchema{}
 		err = res.Scan(&ci.TableCatalog, &ci.TableSchema, &ci.TableName, &ci.OrdinalPosition, &ci.ColumnName, &ci.DataType, &ci.CharacterMaximumLength,
-			&ci.ColumnDefault, &ci.IsNullable, &ci.IsIdentity, &ci.Checks)
+			&ci.ColumnDefault, &ci.IsNullable, &ci.IsIdentity, &ci.Checks, &ci.ColumnComment)
 		if err != nil {
 			return nil, fmt.Errorf("unable to load identity info from postgres Scan: %v", err)
 		}
