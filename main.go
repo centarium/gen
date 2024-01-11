@@ -579,9 +579,6 @@ func generate(conf *dbmeta.Config) error {
 	*jsonNameFormat = strings.ToLower(*jsonNameFormat)
 	*xmlNameFormat = strings.ToLower(*xmlNameFormat)
 
-	//create database meta info
-	tablesMetaInfo := dbmeta.CreateTablesMetaInfo(tableInfos)
-
 	// generate go files for each table
 	for tableName, tableInfo := range tableInfos {
 
@@ -594,7 +591,6 @@ func generate(conf *dbmeta.Config) error {
 		}
 
 		modelInfo := conf.CreateContextForTableFile(tableInfo)
-		modelInfo["TablesMetaInfo"] = tablesMetaInfo
 
 		/*
 			modelFile := filepath.Join(modelDir, CreateGoSrcFileName(tableName))
@@ -771,6 +767,8 @@ func generateProtobufDefinitionFile(conf *dbmeta.Config, data map[string]interfa
 	}
 
 	protofile := fmt.Sprintf("%s.proto", *sqlDatabase)
+	data["TablesMetaInfo"] = dbmeta.CreateTablesMetaInfo(tableInfos)
+
 	err = conf.WriteTemplate(ProtobufTmpl, data, filepath.Join(*outDir, protofile))
 	if err != nil {
 		fmt.Print(au.Red(fmt.Sprintf("Error writing file: %v\n", err)))
