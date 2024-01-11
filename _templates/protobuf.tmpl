@@ -1,7 +1,9 @@
 syntax = "proto3";
 
 package {{.protoGoPackage}};
+{{ if .TablesMetaInfo.HaveValidations -}}
 import "validate/validate.proto";
+{{end}}
 
 option go_package = "/{{.protoGoPackage}}";
 

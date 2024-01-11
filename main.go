@@ -579,6 +579,9 @@ func generate(conf *dbmeta.Config) error {
 	*jsonNameFormat = strings.ToLower(*jsonNameFormat)
 	*xmlNameFormat = strings.ToLower(*xmlNameFormat)
 
+	//create database meta info
+	tablesMetaInfo := dbmeta.CreateTablesMetaInfo(tableInfos)
+
 	// generate go files for each table
 	for tableName, tableInfo := range tableInfos {
 
@@ -591,6 +594,7 @@ func generate(conf *dbmeta.Config) error {
 		}
 
 		modelInfo := conf.CreateContextForTableFile(tableInfo)
+		modelInfo["TablesMetaInfo"] = tablesMetaInfo
 
 		/*
 			modelFile := filepath.Join(modelDir, CreateGoSrcFileName(tableName))

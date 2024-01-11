@@ -291,7 +291,6 @@ type ModelInfo struct {
 	DBMeta          DbTableMeta
 	Instance        interface{}
 	CodeFields      []*FieldInfo
-	Check           CheckConstraint
 }
 
 func (m *ModelInfo) GetRequiredFields() string {
@@ -356,6 +355,8 @@ type IFieldInfo interface {
 	GetGoFieldNameGRPCFieldName() string
 	IsTime() bool
 	GetFieldTags() string
+	IsGRPCTag() bool
+	IsWrappedField() bool
 }
 
 func IsIntType(fieldType string) bool {
@@ -374,6 +375,14 @@ func IsIntType(fieldType string) bool {
 
 	_, ok := intTypes[fieldType]
 	return ok
+}
+
+func (f *FieldInfo) IsGRPCTag() bool {
+	return IsIntType(f.ProtobufType)
+}
+
+func (f *FieldInfo) IsWrappedField() bool {
+	return f.ProtobufType == "bool"
 }
 
 func (f *FieldInfo) GetFieldTags() string {
@@ -995,4 +1004,42 @@ func checkDupeProtoBufFieldName(fields []*FieldInfo, fieldName string) string {
 func generateAlternativeName(name string) string {
 	name = name + "alt1"
 	return name
+}
+
+type TablesMetaInfo struct {
+	HaveGRPCAnnotations bool
+	HaveValidations     bool
+	HaveWrappedFields   bool
+	HaveTimeField       bool
+}
+
+func CreateTablesMetaInfo(tableInfos map[string]*ModelInfo) *TablesMetaInfo {
+	metaInfo := &TablesMetaInfo{}
+
+	for _, v := range tableInfos {
+		for _, k := range v.CodeFields {
+			//don't count information and enabled fields
+			if k.IsInformationField() || k.IsEnabledField() {
+				continue
+			}
+
+			if k.IsTime() {
+				metaInfo.HaveTimeField = true
+			}
+
+			if k.ColumnMeta.IsRequired() {
+				metaInfo.HaveValidations = true
+			}
+
+			if k.IsGRPCTag() {
+				metaInfo.HaveGRPCAnnotations = true
+			}
+
+			if k.IsWrappedField() {
+				metaInfo.HaveWrappedFields = true
+			}
+		}
+	}
+
+	return metaInfo
 }
