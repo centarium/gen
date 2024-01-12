@@ -61,6 +61,19 @@ func TestGetFieldTags(t *testing.T) {
 			expectedResult: "[(validate.rules).int64.gt = 0,(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}]",
 		},
 		{
+			name: "PrimaryUUID",
+			fieldInfo: FieldInfo{
+				ProtobufType: "string",
+				ColumnMeta: &colMetaForTest{
+					columnMeta{
+						isPrimaryKey: true,
+						columnType:   "uUiD",
+					},
+				},
+			},
+			expectedResult: "[(validate.rules).string.min_len = 1]",
+		},
+		{
 			name: "PrimaryString",
 			fieldInfo: FieldInfo{
 				ProtobufType: "string",

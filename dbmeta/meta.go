@@ -194,7 +194,7 @@ func (ci *columnMeta) IsNumberNonZero() bool {
 
 func (ci *columnMeta) IsStringNonZero() bool {
 	return ci.Check == StringNonZero ||
-		(ci.IsPrimaryKey() && ci.columnType == "text")
+		(ci.IsPrimaryKey() && (strings.ToLower(ci.columnType) == "text" || strings.ToLower(ci.columnType) == "uuid"))
 }
 
 func (ci *columnMeta) IsRequired() bool {

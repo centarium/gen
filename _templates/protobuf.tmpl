@@ -58,7 +58,7 @@ message GetAll{{ $tableInfo.StructName }}Response {
 
 message Get{{ $tableInfo.StructName }}Request {
 {{- $fieldPos := set 0 -}}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc}}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}};{{- end }}{{- end}}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}}{{ $field.GetFieldTags }};{{- end }}{{- end}}
 }
 
 message Get{{ $tableInfo.StructName }}Response {
