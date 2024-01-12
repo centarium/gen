@@ -189,12 +189,12 @@ func (ci *columnMeta) GetCheckType() CheckConstraint {
 
 func (ci *columnMeta) IsNumberNonZero() bool {
 	return ci.Check == NumberNonZero ||
-		ci.IsPrimaryKey() && strings.Contains("int", strings.ToLower(ci.columnType))
+		(ci.IsPrimaryKey() && strings.Contains(strings.ToLower(ci.columnType), "int"))
 }
 
 func (ci *columnMeta) IsStringNonZero() bool {
 	return ci.Check == StringNonZero ||
-		ci.IsPrimaryKey() && ci.columnType == "text"
+		(ci.IsPrimaryKey() && ci.columnType == "text")
 }
 
 func (ci *columnMeta) IsRequired() bool {

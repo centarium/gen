@@ -48,6 +48,32 @@ func TestGetFieldTags(t *testing.T) {
 		expectedResult string
 	}{
 		{
+			name: "PrimaryInt",
+			fieldInfo: FieldInfo{
+				ProtobufType: "int64",
+				ColumnMeta: &colMetaForTest{
+					columnMeta{
+						isPrimaryKey: true,
+						columnType:   "Int8",
+					},
+				},
+			},
+			expectedResult: "[(validate.rules).int64.gt = 0,(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}]",
+		},
+		{
+			name: "PrimaryString",
+			fieldInfo: FieldInfo{
+				ProtobufType: "string",
+				ColumnMeta: &colMetaForTest{
+					columnMeta{
+						isPrimaryKey: true,
+						columnType:   "text",
+					},
+				},
+			},
+			expectedResult: "[(validate.rules).string.min_len = 1]",
+		},
+		{
 			name: "StringNonZero",
 			fieldInfo: FieldInfo{
 				ProtobufType: "string",
