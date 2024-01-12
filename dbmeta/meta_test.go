@@ -31,3 +31,58 @@ func TestIsIntType(t *testing.T) {
 		}
 	}
 }
+
+type colMetaForTest struct {
+	columnMeta
+}
+
+func (c *colMetaForTest) IsRequired() bool {
+	return true
+}
+
+func TestGetFieldTags(t *testing.T) {
+
+	tests := []struct {
+		name           string
+		fieldInfo      FieldInfo
+		expectedResult string
+	}{
+		{
+			name: "StringNonZero",
+			fieldInfo: FieldInfo{
+				ProtobufType: "string",
+				ColumnMeta: &colMetaForTest{
+					columnMeta{Check: StringNonZero},
+				},
+			},
+			expectedResult: "[(validate.rules).string.min_len = 1]",
+		},
+		{
+			name: "NumberNonZero",
+			fieldInfo: FieldInfo{
+				ProtobufType: "int32",
+				ColumnMeta: &colMetaForTest{
+					columnMeta{Check: NumberNonZero},
+				},
+			},
+			expectedResult: "[(validate.rules).int32.gt = 0,(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}]",
+		},
+		{
+			name: "NoTags",
+			fieldInfo: FieldInfo{
+				ProtobufType: "float64",
+				ColumnMeta:   &colMetaForTest{},
+			},
+			expectedResult: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.fieldInfo.GetFieldTags()
+			if result != tt.expectedResult {
+				t.Errorf("Expected: %s, Got: %s", tt.expectedResult, result)
+			}
+		})
+	}
+}

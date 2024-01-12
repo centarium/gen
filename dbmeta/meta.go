@@ -188,11 +188,13 @@ func (ci *columnMeta) GetCheckType() CheckConstraint {
 }
 
 func (ci *columnMeta) IsNumberNonZero() bool {
-	return ci.Check == NumberNonZero
+	return ci.Check == NumberNonZero ||
+		ci.IsPrimaryKey() && strings.Contains("int", strings.ToLower(ci.columnType))
 }
 
 func (ci *columnMeta) IsStringNonZero() bool {
-	return ci.Check == StringNonZero
+	return ci.Check == StringNonZero ||
+		ci.IsPrimaryKey() && ci.columnType == "text"
 }
 
 func (ci *columnMeta) IsRequired() bool {
@@ -385,10 +387,10 @@ func (f *FieldInfo) IsWrappedField() bool {
 	return f.ProtobufType == "bool"
 }
 
-func (f *FieldInfo) GetFieldTags() string {
+// GetValidationTags validation tags
+func (f *FieldInfo) GetValidationTags() string {
 	fieldTags := make([]string, 0)
 
-	//validation tags
 	if f.ColumnMeta.IsStringNonZero() {
 		fieldTags = append(fieldTags, "(validate.rules).string.min_len = 1")
 	}
@@ -396,9 +398,41 @@ func (f *FieldInfo) GetFieldTags() string {
 		fieldTags = append(fieldTags, fmt.Sprintf("(validate.rules).%s.gt = 0", f.ProtobufType))
 	}
 
-	//grpc.gateway.protoc_gen_openapiv2 tags
+	if len(fieldTags) != 0 {
+		return fmt.Sprintf("[%s]", strings.Join(fieldTags, ","))
+	}
+
+	return ""
+}
+
+// GetGRPCTags grpc.gateway.protoc_gen_openapiv2 tags
+func (f *FieldInfo) GetGRPCTags() string {
+	fieldTags := make([]string, 0)
+
 	if IsIntType(f.ProtobufType) {
 		fieldTags = append(fieldTags, "(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}")
+	}
+
+	if len(fieldTags) != 0 {
+		return fmt.Sprintf("[%s]", strings.Join(fieldTags, ","))
+	}
+
+	return ""
+}
+
+func removeBrackets(in string) (out string) {
+	out = strings.Replace(in, "[", "", 1)
+	return strings.ReplaceAll(out, "]", "")
+}
+
+func (f *FieldInfo) GetFieldTags() string {
+	fieldTags := make([]string, 0)
+
+	if fieldTagsString := f.GetValidationTags(); fieldTagsString != "" {
+		fieldTags = append(fieldTags, removeBrackets(fieldTagsString))
+	}
+	if grpcTagsString := f.GetGRPCTags(); grpcTagsString != "" {
+		fieldTags = append(fieldTags, removeBrackets(grpcTagsString))
 	}
 
 	if len(fieldTags) != 0 {
