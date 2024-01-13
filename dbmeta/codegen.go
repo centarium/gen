@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	sprig "github.com/go-task/slim-sprig"
 	"path"
 	"time"
 
@@ -57,6 +58,11 @@ func replace(input, from, to string) string {
 func Replace(nameFormat, name string) string {
 	var tpl bytes.Buffer
 	//fmt.Printf("Replace: %s\n",nameFormat)
+	// add some math functions
+	for k, v := range sprig.FuncMap() {
+		replaceFuncMap[k] = v
+	}
+
 	t := template.Must(template.New("t1").Funcs(replaceFuncMap).Parse(nameFormat))
 
 	if err := t.Execute(&tpl, name); err != nil {
@@ -124,6 +130,10 @@ func (c *Config) GetTemplate(genTemplate *GenTemplate) (*template.Template, erro
 		"pwd":                        Pwd,
 		"config":                     c.DisplayConfig,
 		"insertFragment":             c.insertFragment,
+	}
+
+	for k, v := range sprig.FuncMap() {
+		funcMap[k] = v
 	}
 
 	baseName := filepath.Base(genTemplate.Name)

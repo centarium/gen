@@ -30,14 +30,12 @@ service {{.serviceName}} {
 {{ range $tableName, $tableInfo := .tableInfos }}
 // table: {{$tableName}}
 message {{ $tableInfo.StructName }} {
+{{ $iterator := 1 }}
 {{- range $i, $field := $tableInfo.CodeFields -}}
-      {{ $validation := "" -}}
-      {{ if $field.ColumnMeta.IsNumberNonZero -}}
-        {{ $validation = printf "[(validate.rules).%s.gt = 0]" $field.ProtobufType -}}
-      {{ else if $field.ColumnMeta.IsStringNonZero -}}
-        {{ $validation = "[(validate.rules).string.min_len = 1]" -}}
-      {{- end }}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{  $field.ProtobufPos}}{{ $validation }};
+    {{- if not (or $field.IsEnabledField $field.IsInformationField) }}
+    {{ $field.ProtobufType }} {{ $field.ProtobufFieldName}} = {{ $iterator }}{{ $field.GetFieldTags }};
+    {{- $iterator = add $iterator 1 -}}
+    {{- end -}}
 {{- end}}
 }
 
@@ -57,8 +55,8 @@ message GetAll{{ $tableInfo.StructName }}Response {
 
 
 message Get{{ $tableInfo.StructName }}Request {
-{{- $fieldPos := set 0 -}}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc}}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}}{{ $field.GetFieldTags }};{{- end }}{{- end}}
+{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = 1 {{ $field.GetFieldTags }};{{- end }}{{- end}}
 }
 
 message Get{{ $tableInfo.StructName }}Response {
@@ -86,8 +84,8 @@ message Update{{ $tableInfo.StructName }}Response {
 }
 
 message Delete{{ $tableInfo.StructName }}Request {
-{{- $fieldPos := set 0 -}}{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}{{ $fieldPos := inc }}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = {{ $fieldPos}};{{- end }}{{- end}}
+{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}
+    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = 1 ;{{- end }}{{- end}}
 }
 
 message Delete{{ $tableInfo.StructName }}Response {
