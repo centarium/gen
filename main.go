@@ -35,6 +35,7 @@ var (
 	templateDir      = goopt.String([]string{"--templateDir"}, "", "Template Dir")
 	fragmentsDir     = goopt.String([]string{"--fragmentsDir"}, "", "Code fragments Dir")
 	saveTemplateDir  = goopt.String([]string{"--save"}, "", "Save templates to dir")
+	serviceName      = goopt.String([]string{"--serviceName"}, "Backend", "Name for service in proto")
 
 	modelPackageName    = goopt.String([]string{"--model"}, "model", "name to set for model package")
 	modelNamingTemplate = goopt.String([]string{"--model_naming"}, "{{FmtFieldName .}}", "model naming template to name structs")
@@ -349,6 +350,7 @@ func initialize(conf *dbmeta.Config) {
 	conf.SQLType = *sqlType
 	conf.SQLDatabase = *sqlDatabase
 	conf.ProtoGoPackage = *protoGoPackage
+	conf.ServiceName = *serviceName
 
 	conf.AddJSONAnnotation = *addJSONAnnotation
 	conf.AddXMLAnnotation = *addXMLAnnotation
@@ -450,6 +452,7 @@ func executeCustomScript(conf *dbmeta.Config) error {
 func execTemplate(conf *dbmeta.Config, genTemplate *dbmeta.GenTemplate, data map[string]interface{}) error {
 	data["DatabaseName"] = *sqlDatabase
 	data["protoGoPackage"] = *protoGoPackage
+	data["serviceName"] = *serviceName
 	data["module"] = *module
 	data["modelFQPN"] = conf.ModelFQPN
 	data["daoFQPN"] = conf.DaoFQPN

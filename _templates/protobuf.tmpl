@@ -17,7 +17,7 @@ message Result {
     string message = 2;
 }
 
-service Backend {
+service {{.serviceName}} {
 {{ range $tableName, $tableInfo := .tableInfos }}
     rpc GetAll{{ $tableInfo.StructName }}(GetAll{{ $tableInfo.StructName }}Request) returns (GetAll{{ $tableInfo.StructName }}Response);
     rpc Get{{ $tableInfo.StructName }}(Get{{ $tableInfo.StructName }}Request) returns (Get{{ $tableInfo.StructName }}Response);
