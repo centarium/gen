@@ -293,6 +293,7 @@ type ModelInfo struct {
 	DBMeta          DbTableMeta
 	Instance        interface{}
 	CodeFields      []*FieldInfo
+	PrimaryField    *FieldInfo
 }
 
 func (m *ModelInfo) GetRequiredFields() string {
@@ -921,6 +922,7 @@ func GenerateModelInfo(tables map[string]*ModelInfo, dbMeta DbTableMeta,
 	generator := dynamicstruct.NewStruct()
 
 	noOfPrimaryKeys := 0
+	var primaryKeyField *FieldInfo
 	for i, c := range fields {
 		meta := dbMeta.Columns()[i]
 		jsonName := formatFieldName(conf.JSONNameFormat, meta.Name())
@@ -929,6 +931,7 @@ func GenerateModelInfo(tables map[string]*ModelInfo, dbMeta DbTableMeta,
 		generator = generator.AddField(c.GoFieldName, fakeData, tag)
 		if meta.IsPrimaryKey() {
 			//c.PrimaryKeyArgName = RenameReservedName(strcase.ToLowerCamel(c.GoFieldName))
+			primaryKeyField = c
 			c.PrimaryKeyArgName = fmt.Sprintf("arg%s", FmtFieldName(c.GoFieldName))
 			noOfPrimaryKeys++
 		}
@@ -961,6 +964,7 @@ func GenerateModelInfo(tables map[string]*ModelInfo, dbMeta DbTableMeta,
 		CodeFields:      fields,
 		DBMeta:          dbMeta,
 		Instance:        instance,
+		PrimaryField:    primaryKeyField,
 	}
 
 	return modelInfo, nil

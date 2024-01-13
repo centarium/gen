@@ -84,8 +84,7 @@ message Update{{ $tableInfo.StructName }}Response {
 }
 
 message Delete{{ $tableInfo.StructName }}Request {
-{{ range $i, $field := $tableInfo.CodeFields }}{{ if $field.ColumnMeta.IsPrimaryKey }}
-    {{ $field.ProtobufType}} {{ $field.ProtobufFieldName}} = 1 ;{{- end }}{{- end}}
+{{ $tableInfo.PrimaryField.ProtobufType}} {{ $tableInfo.PrimaryField.ProtobufFieldName}} = 1;
 }
 
 message Delete{{ $tableInfo.StructName }}Response {
