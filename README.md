@@ -19,7 +19,6 @@ delAll, updateAll, AddAll
    --overwrite \
    --json \
    --dao="model" \
-   --gorm \
    --generate-dao \
    --templateDir=./tmp_templates \
    --protobuf \

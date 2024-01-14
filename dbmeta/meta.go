@@ -211,6 +211,7 @@ type DbTableMeta interface {
 	SQLType() string
 	SQLDatabase() string
 	TableName() string
+	GetTableAlias() string
 	DDL() string
 }
 
@@ -264,6 +265,11 @@ func (m *dbTableMeta) SQLDatabase() string {
 // TableName sql table name
 func (m *dbTableMeta) TableName() string {
 	return m.tableName
+}
+
+// TableName sql table name
+func (m *dbTableMeta) GetTableAlias() string {
+	return string([]rune(m.tableName)[0])
 }
 
 // Columns ColumnMeta for columns in a sql table
