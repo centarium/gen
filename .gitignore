@@ -43,3 +43,5 @@ example/daos/
 example/models/
 tests/
 .env
+tmp
+tmp_templates

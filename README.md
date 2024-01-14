@@ -10,3 +10,4 @@ main.go:
 	func WriteTemplate -> data["serviceName"] = c.ServiceName
 ```
 2) add template functions(v0.1.22): https://github.com/Masterminds/sprig 
+delAll, updateAll, AddAll

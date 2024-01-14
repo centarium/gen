@@ -385,7 +385,7 @@ func (f *FieldInfo) IsGRPCTag() bool {
 }
 
 func (f *FieldInfo) IsWrappedField() bool {
-	return f.ProtobufType == "bool"
+	return f.ProtobufType == "google.protobuf.BoolValue"
 }
 
 // GetValidationTags validation tags
