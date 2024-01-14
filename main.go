@@ -769,7 +769,7 @@ func generateProtobufDefinitionFile(conf *dbmeta.Config, data map[string]interfa
 		return err
 	}
 
-	protofile := fmt.Sprintf("%s.proto", *sqlDatabase)
+	protofile := fmt.Sprintf("%s.proto", *serviceName)
 	data["TablesMetaInfo"] = dbmeta.CreateTablesMetaInfo(tableInfos)
 
 	err = conf.WriteTemplate(ProtobufTmpl, data, filepath.Join(*outDir, protofile))
