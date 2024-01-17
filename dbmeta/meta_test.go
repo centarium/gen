@@ -2,6 +2,36 @@ package dbmeta
 
 import "testing"
 
+func TestGetWrappedGoType(t *testing.T) {
+	tests := []struct {
+		fieldInfo *FieldInfo
+		expected  string
+	}{
+		{&FieldInfo{ProtobufType: "int32"}, "Int32Value"},
+		{&FieldInfo{ProtobufType: "int64"}, "Int64Value"},
+		{&FieldInfo{ProtobufType: "uint32"}, "UInt32Value"},
+		{&FieldInfo{ProtobufType: "uint64"}, "UInt64Value"},
+		{&FieldInfo{ProtobufType: "sint32"}, "sint32"},
+		{&FieldInfo{ProtobufType: "sint64"}, "sint64"},
+		{&FieldInfo{ProtobufType: "fixed32"}, "fixed32"},
+		{&FieldInfo{ProtobufType: "fixed64"}, "fixed64"},
+		{&FieldInfo{ProtobufType: "sfixed32"}, "sfixed32"},
+		{&FieldInfo{ProtobufType: "sfixed64"}, "sfixed64"},
+		{&FieldInfo{ProtobufType: "float32"}, "FloatValue"},  // Замените "float32" на ожидаемое значение
+		{&FieldInfo{ProtobufType: "float64"}, "DoubleValue"}, // Замените "float64" на ожидаемое значение
+		{&FieldInfo{ProtobufType: "string"}, "StringValue"},  // Замените "string" на ожидаемое значение
+		{&FieldInfo{ProtobufType: "bool"}, "BoolValue"},      // Замените "bool" на ожидаемое значение
+		{&FieldInfo{ProtobufType: ""}, ""},                   // Замените "" на ожидаемое значение
+	}
+
+	for _, test := range tests {
+		result := test.fieldInfo.GetWrappedGoType()
+		if result != test.expected {
+			t.Errorf("For type %s, expected %s, but got %s", test.fieldInfo.ProtobufType, test.expected, result)
+		}
+	}
+}
+
 func TestIsIntType(t *testing.T) {
 	tests := []struct {
 		fieldInfo *FieldInfo

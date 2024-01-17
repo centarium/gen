@@ -387,8 +387,7 @@ func (f *FieldInfo) GetWrappedGoType() string {
 	if wrappedType, ok = ProtobufToWrappedMapping[f.ProtobufType]; !ok {
 		return f.ProtobufType
 	}
-	return strings.Replace("google.protobuf.", wrappedType, "", 1)
-
+	return strings.Replace(wrappedType, "google.protobuf.", "", 1)
 }
 
 func (f *FieldInfo) IsBoolField() bool {
