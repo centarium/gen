@@ -379,6 +379,18 @@ type IFieldInfo interface {
 	GetWrappedType() string
 }
 
+func (f *FieldInfo) GetWrappedGoType() string {
+	var (
+		wrappedType string
+		ok          bool
+	)
+	if wrappedType, ok = ProtobufToWrappedMapping[f.ProtobufType]; !ok {
+		return f.ProtobufType
+	}
+	return strings.Replace("google.protobuf.", wrappedType, "", 1)
+
+}
+
 func (f *FieldInfo) IsBoolField() bool {
 	var boolTypes = map[string]struct{}{
 		"bool": struct{}{},
