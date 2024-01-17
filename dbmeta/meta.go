@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/bxcodec/faker/v3"
+	"github.com/iancoleman/strcase"
+	dynamicstruct "github.com/ompluscator/dynamic-struct"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,17 +15,13 @@ import (
 	"runtime"
 	"strings"
 	"time"
-	"unicode"
-
-	"github.com/bxcodec/faker/v3"
-	"github.com/iancoleman/strcase"
-	dynamicstruct "github.com/ompluscator/dynamic-struct"
 )
 
 type metaDataLoader func(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTableMeta, error)
 
 var metaDataFuncs = make(map[string]metaDataLoader)
 var sqlMappings = make(map[string]*SQLMapping)
+var ProtobufToWrappedMapping = make(map[string]string)
 
 type CheckConstraint int
 
@@ -38,6 +37,18 @@ func init() {
 	metaDataFuncs["mssql"] = LoadMsSQLMeta
 	metaDataFuncs["postgres"] = LoadPostgresMeta
 	metaDataFuncs["mysql"] = LoadMysqlMeta
+
+	ProtobufToWrappedMapping = map[string]string{
+		"string":  "google.protobuf.StringValue",
+		"int64":   "google.protobuf.Int64Value",
+		"int32":   "google.protobuf.Int32Value",
+		"bool":    "google.protobuf.BoolValue",
+		"float64": "google.protobuf.DoubleValue",
+		"float32": "google.protobuf.FloatValue",
+		"bytes":   "google.protobuf.BytesValue",
+		"uint32":  "google.protobuf.UInt32Value",
+		"uint64":  "google.protobuf.UInt64Value",
+	}
 }
 
 // SQLMappings mappings for sql types to json, go etc
@@ -361,14 +372,23 @@ type FieldInfo struct {
 type IFieldInfo interface {
 	IsEnabledField() bool
 	IsInformationField() bool
-	GetGoFieldNameGRPCFieldName() string
 	IsTime() bool
 	GetFieldTags() string
 	IsGRPCTag() bool
 	IsWrappedField() bool
+	GetWrappedType() string
 }
 
-func IsIntType(fieldType string) bool {
+func (f *FieldInfo) IsBoolField() bool {
+	var boolTypes = map[string]struct{}{
+		"bool": struct{}{},
+	}
+
+	_, ok := boolTypes[f.ProtobufType]
+	return ok
+}
+
+func (f *FieldInfo) IsIntType() bool {
 	var intTypes = map[string]struct{}{
 		"int32":    struct{}{},
 		"int64":    struct{}{},
@@ -380,18 +400,33 @@ func IsIntType(fieldType string) bool {
 		"fixed64":  struct{}{},
 		"sfixed32": struct{}{},
 		"sfixed64": struct{}{},
+		"int":      struct{}{},
 	}
 
-	_, ok := intTypes[fieldType]
+	_, ok := intTypes[f.ProtobufType]
 	return ok
 }
 
 func (f *FieldInfo) IsGRPCTag() bool {
-	return IsIntType(f.ProtobufType)
+	return f.IsIntType()
+}
+
+func (f *FieldInfo) GetWrappedType() string {
+	var (
+		wrappedType string
+		ok          bool
+	)
+	if wrappedType, ok = ProtobufToWrappedMapping[f.ProtobufType]; !ok {
+		return f.ProtobufType
+	}
+	return wrappedType
 }
 
 func (f *FieldInfo) IsWrappedField() bool {
-	return f.ProtobufType == "google.protobuf.BoolValue"
+	if _, ok := ProtobufToWrappedMapping[f.ProtobufType]; ok {
+		return ok
+	}
+	return false
 }
 
 // GetValidationTags validation tags
@@ -416,7 +451,7 @@ func (f *FieldInfo) GetValidationTags() string {
 func (f *FieldInfo) GetGRPCTags() string {
 	fieldTags := make([]string, 0)
 
-	if IsIntType(f.ProtobufType) {
+	if f.IsIntType() {
 		fieldTags = append(fieldTags, "(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {type: INTEGER}")
 	}
 
@@ -455,15 +490,6 @@ func (f *FieldInfo) IsEnabledField() bool {
 
 func (f *FieldInfo) IsInformationField() bool {
 	return strings.Contains(f.ColumnComment, "Information field")
-}
-
-func (f *FieldInfo) GetGoFieldNameGRPCFieldName() string {
-	if f.GoFieldName == "" {
-		return f.GoFieldName
-	}
-	r := []rune(strings.ToLower(f.GoFieldName))
-	r[0] = unicode.ToUpper(r[0])
-	return string(r)
 }
 
 func (f *FieldInfo) IsTime() bool {

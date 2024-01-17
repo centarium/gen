@@ -4,30 +4,30 @@ import "testing"
 
 func TestIsIntType(t *testing.T) {
 	tests := []struct {
-		fieldType string
+		fieldInfo *FieldInfo
 		expected  bool
 	}{
-		{"int32", true},
-		{"int64", true},
-		{"uint32", true},
-		{"uint64", true},
-		{"sint32", true},
-		{"sint64", true},
-		{"fixed32", true},
-		{"fixed64", true},
-		{"sfixed32", true},
-		{"sfixed64", true},
-		{"float32", false},
-		{"float64", false},
-		{"string", false},
-		{"bool", false},
-		{"", false},
+		{&FieldInfo{ProtobufType: "int32"}, true},
+		{&FieldInfo{ProtobufType: "int64"}, true},
+		{&FieldInfo{ProtobufType: "uint32"}, true},
+		{&FieldInfo{ProtobufType: "uint64"}, true},
+		{&FieldInfo{ProtobufType: "sint32"}, true},
+		{&FieldInfo{ProtobufType: "sint64"}, true},
+		{&FieldInfo{ProtobufType: "fixed32"}, true},
+		{&FieldInfo{ProtobufType: "fixed64"}, true},
+		{&FieldInfo{ProtobufType: "sfixed32"}, true},
+		{&FieldInfo{ProtobufType: "sfixed64"}, true},
+		{&FieldInfo{ProtobufType: "float32"}, false},
+		{&FieldInfo{ProtobufType: "float64"}, false},
+		{&FieldInfo{ProtobufType: "string"}, false},
+		{&FieldInfo{ProtobufType: "bool"}, false},
+		{&FieldInfo{ProtobufType: ""}, false},
 	}
 
 	for _, test := range tests {
-		result := IsIntType(test.fieldType)
+		result := test.fieldInfo.IsIntType()
 		if result != test.expected {
-			t.Errorf("For type %s, expected %t, but got %t", test.fieldType, test.expected, result)
+			t.Errorf("For type %s, expected %t, but got %t", test.fieldInfo.ProtobufType, test.expected, result)
 		}
 	}
 }

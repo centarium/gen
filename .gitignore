@@ -45,3 +45,4 @@ tests/
 .env
 tmp
 tmp_templates
+cfg
