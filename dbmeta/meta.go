@@ -1174,6 +1174,7 @@ type TablesMetaInfo struct {
 	HaveValidations     bool
 	HaveWrappedFields   bool
 	HaveTimeField       bool
+	HaveInt64           bool
 }
 
 func CreateTablesMetaInfo(tableInfos map[string]*ModelInfo) *TablesMetaInfo {
@@ -1188,6 +1189,10 @@ func CreateTablesMetaInfo(tableInfos map[string]*ModelInfo) *TablesMetaInfo {
 
 			if k.IsTime() {
 				metaInfo.HaveTimeField = true
+			}
+
+			if k.Is64Bit() {
+				metaInfo.HaveInt64 = true
 			}
 
 			if k.ColumnMeta.IsRequired() {
