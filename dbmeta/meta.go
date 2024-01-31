@@ -1182,17 +1182,17 @@ func CreateTablesMetaInfo(tableInfos map[string]*ModelInfo) *TablesMetaInfo {
 
 	for _, v := range tableInfos {
 		for _, k := range v.CodeFields {
-			//don't count information and enabled fields
-			if k.IsInformationField() || k.IsEnabledField() {
+
+			//don't count  enabled fields
+			if k.IsEnabledField() {
 				continue
+			}
+			if k.Is64Bit() {
+				metaInfo.HaveInt64 = true
 			}
 
 			if k.IsTime() {
 				metaInfo.HaveTimeField = true
-			}
-
-			if k.Is64Bit() {
-				metaInfo.HaveInt64 = true
 			}
 
 			if k.ColumnMeta.IsRequired() {
