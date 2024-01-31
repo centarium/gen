@@ -390,6 +390,13 @@ type IFieldInfo interface {
 	IsGRPCTag() bool
 	IsWrappedField() bool
 	GetWrappedType() string
+	GetValidationTags() string
+	GetGRPCTags() string
+	IsIntType() bool
+	Is64Bit() bool
+	Is32Bit() bool
+	IsFloatType() bool
+	IsBoolField() bool
 }
 
 func (f *FieldInfo) GetWrappedGoType() string {
@@ -412,6 +419,15 @@ func (f *FieldInfo) IsBoolField() bool {
 	return ok
 }
 
+func (f *FieldInfo) IsString() bool {
+	var stringTypes = map[string]struct{}{
+		"string": struct{}{},
+	}
+
+	_, ok := stringTypes[f.ProtobufType]
+	return ok
+}
+
 func (f *FieldInfo) IsFloatType() bool {
 	var floatTypes = map[string]struct{}{
 		"float32": struct{}{},
@@ -419,6 +435,35 @@ func (f *FieldInfo) IsFloatType() bool {
 	}
 
 	_, ok := floatTypes[f.ProtobufType]
+	return ok
+}
+
+func (f *FieldInfo) Is32Bit() bool {
+	var int32Types = map[string]struct{}{
+		"float32":  struct{}{},
+		"int32":    struct{}{},
+		"uint32":   struct{}{},
+		"sint32":   struct{}{},
+		"fixed32":  struct{}{},
+		"sfixed32": struct{}{},
+	}
+
+	_, ok := int32Types[f.ProtobufType]
+	return ok
+}
+
+func (f *FieldInfo) Is64Bit() bool {
+	var int64Types = map[string]struct{}{
+		"float64":  struct{}{},
+		"int64":    struct{}{},
+		"uint64":   struct{}{},
+		"sint64":   struct{}{},
+		"fixed64":  struct{}{},
+		"sfixed64": struct{}{},
+		"int":      struct{}{},
+	}
+
+	_, ok := int64Types[f.ProtobufType]
 	return ok
 }
 
