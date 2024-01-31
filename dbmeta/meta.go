@@ -119,6 +119,8 @@ type columnMeta struct {
 	name             string
 	Check            CheckConstraint
 	ColumnComment    string
+	isForeignKey     bool
+	ForeignKeyTable  string
 }
 
 // ColumnType column type
@@ -216,6 +218,14 @@ func (ci *columnMeta) GetColumnComment() string {
 	return ci.ColumnComment
 }
 
+func (ci *columnMeta) IsForeignKey() bool {
+	return ci.isForeignKey
+}
+
+func (ci *columnMeta) GetForeignKeyTableName() string {
+	return ci.ForeignKeyTable
+}
+
 // DbTableMeta table meta data
 type DbTableMeta interface {
 	Columns() []ColumnMeta
@@ -247,6 +257,8 @@ type ColumnMeta interface {
 	IsStringNonZero() bool
 	GetColumnComment() string
 	IsRequired() bool
+	IsForeignKey() bool
+	GetForeignKeyTableName() string
 }
 
 type dbTableMeta struct {
@@ -367,6 +379,7 @@ type FieldInfo struct {
 	GoGoMoreTags          string
 	Check                 CheckConstraint
 	ColumnComment         string
+	ForeignModelInfo      *ModelInfo
 }
 
 type IFieldInfo interface {
@@ -396,6 +409,16 @@ func (f *FieldInfo) IsBoolField() bool {
 	}
 
 	_, ok := boolTypes[f.ProtobufType]
+	return ok
+}
+
+func (f *FieldInfo) IsFloatType() bool {
+	var floatTypes = map[string]struct{}{
+		"float32": struct{}{},
+		"float64": struct{}{},
+	}
+
+	_, ok := floatTypes[f.ProtobufType]
 	return ok
 }
 
@@ -936,6 +959,20 @@ func LoadTableInfo(db *sql.DB, dbTables []string, excludeDbTables []string, conf
 		tableIdx++
 
 		tableInfos[tableName] = modelInfo
+	}
+
+	//load foreign keys
+	for k, v := range tableInfos {
+		for fieldKey, fieldInfo := range v.CodeFields {
+			if fieldInfo.ColumnMeta.IsForeignKey() {
+				foreignKeyModel, ok := tableInfos[fieldInfo.ColumnMeta.GetForeignKeyTableName()]
+				if ok {
+					tableInfos[k].CodeFields[fieldKey].ForeignModelInfo = foreignKeyModel
+				} else {
+					tableInfos[k].CodeFields[fieldKey].ForeignModelInfo = &ModelInfo{}
+				}
+			}
+		}
 	}
 
 	return tableInfos

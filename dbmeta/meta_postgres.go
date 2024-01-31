@@ -95,6 +95,8 @@ func LoadPostgresMeta(db *sql.DB, sqlType, sqlDatabase, tableName string) (DbTab
 			defaultVal:       defaultVal,
 			Check:            check,
 			ColumnComment:    columnComment,
+			isForeignKey:     colInfo.IsForeignKey,
+			ForeignKeyTable:  colInfo.ForeignKeyTable,
 		}
 
 		m.columns[i] = colMeta

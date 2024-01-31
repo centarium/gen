@@ -102,6 +102,8 @@ type PostgresInformationSchema struct {
 	PrimaryKey             bool
 	Checks                 string
 	ColumnComment          string
+	IsForeignKey           bool
+	ForeignKeyTable        string
 }
 
 // LoadTableInfoFromPostgresInformationSchema fetch info from information_schema for postgres database
@@ -111,7 +113,9 @@ func LoadTableInfoFromPostgresInformationSchema(db *sql.DB, tableName string) (p
 	identitySQL := fmt.Sprintf(`
 SELECT c.TABLE_CATALOG, c.table_schema, c.table_name, c.ordinal_position, c.column_name,
        c.data_type, c.character_maximum_length, c.column_default, c.is_nullable, c.is_identity,
-       COALESCE(ch_c.checks, ''), COALESCE(comments.description, '')
+       COALESCE(ch_c.checks, ''), COALESCE(comments.description, ''),
+       CASE WHEN f_k.constraint_type = 'FOREIGN KEY' THEN true
+        ELSE false END as is_foreign_key, COALESCE(f_k.table_name, '') as f_k_table_name
 FROM information_schema.columns c
 LEFT JOIN (
     SELECT DISTINCT(ccu.column_name) as column_name, concat_ws( ',', ch_c.check_clause) as checks
@@ -119,6 +123,13 @@ LEFT JOIN (
     LEFT JOIN information_schema.check_constraints ch_c ON ch_c.constraint_name = ccu.constraint_name
     WHERE ccu.table_name = '%[1]s'
 ) as ch_c ON ch_c.column_name = c.column_name
+LEFT JOIN (
+    SELECT k_c_u.column_name, tc.constraint_type, ccu.table_name
+    FROM information_schema.table_constraints tc
+             LEFT JOIN information_schema.key_column_usage as k_c_u ON k_c_u.constraint_name = tc.constraint_name
+             LEFT JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = k_c_u.constraint_name
+    WHERE tc.table_name = '%[1]s' AND  tc.constraint_type = 'FOREIGN KEY'
+) as f_k ON f_k.column_name = c.column_name
 LEFT JOIN (
     SELECT pgd.objsubid,st.schemaname,st.relname,pgd.description
     FROM pg_catalog.pg_statio_all_tables AS st
@@ -139,7 +150,7 @@ ORDER BY table_name, ordinal_position;
 	for res.Next() {
 		ci := &PostgresInformationSchema{}
 		err = res.Scan(&ci.TableCatalog, &ci.TableSchema, &ci.TableName, &ci.OrdinalPosition, &ci.ColumnName, &ci.DataType, &ci.CharacterMaximumLength,
-			&ci.ColumnDefault, &ci.IsNullable, &ci.IsIdentity, &ci.Checks, &ci.ColumnComment)
+			&ci.ColumnDefault, &ci.IsNullable, &ci.IsIdentity, &ci.Checks, &ci.ColumnComment, &ci.IsForeignKey, &ci.ForeignKeyTable)
 		if err != nil {
 			return nil, fmt.Errorf("unable to load identity info from postgres Scan: %v", err)
 		}

@@ -17,11 +17,11 @@ func TestGetWrappedGoType(t *testing.T) {
 		{&FieldInfo{ProtobufType: "fixed64"}, "fixed64"},
 		{&FieldInfo{ProtobufType: "sfixed32"}, "sfixed32"},
 		{&FieldInfo{ProtobufType: "sfixed64"}, "sfixed64"},
-		{&FieldInfo{ProtobufType: "float32"}, "FloatValue"},  // Замените "float32" на ожидаемое значение
-		{&FieldInfo{ProtobufType: "float64"}, "DoubleValue"}, // Замените "float64" на ожидаемое значение
-		{&FieldInfo{ProtobufType: "string"}, "StringValue"},  // Замените "string" на ожидаемое значение
-		{&FieldInfo{ProtobufType: "bool"}, "BoolValue"},      // Замените "bool" на ожидаемое значение
-		{&FieldInfo{ProtobufType: ""}, ""},                   // Замените "" на ожидаемое значение
+		{&FieldInfo{ProtobufType: "float32"}, "FloatValue"},
+		{&FieldInfo{ProtobufType: "float64"}, "DoubleValue"},
+		{&FieldInfo{ProtobufType: "string"}, "StringValue"},
+		{&FieldInfo{ProtobufType: "bool"}, "BoolValue"},
+		{&FieldInfo{ProtobufType: ""}, ""},
 	}
 
 	for _, test := range tests {
