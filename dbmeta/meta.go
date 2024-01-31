@@ -397,6 +397,9 @@ type IFieldInfo interface {
 	Is32Bit() bool
 	IsFloatType() bool
 	IsBoolField() bool
+	IsCounter() bool
+	IsCreatedAt() bool
+	IsUpdatedAt() bool
 }
 
 func (f *FieldInfo) GetWrappedGoType() string {
@@ -569,6 +572,18 @@ func (f *FieldInfo) IsEnabledField() bool {
 
 func (f *FieldInfo) IsInformationField() bool {
 	return strings.Contains(f.ColumnComment, "Information field")
+}
+
+func (f *FieldInfo) IsCounter() bool {
+	return strings.Contains(f.ColumnComment, "Int Serial")
+}
+
+func (f *FieldInfo) IsCreatedAt() bool {
+	return strings.Contains(f.ColumnComment, "Created At")
+}
+
+func (f *FieldInfo) IsUpdatedAt() bool {
+	return strings.Contains(f.ColumnComment, "Updated At")
 }
 
 func (f *FieldInfo) IsTime() bool {
