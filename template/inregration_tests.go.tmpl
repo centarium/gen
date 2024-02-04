@@ -1,0 +1,199 @@
+package integration_tests
+
+import (
+	"context"
+	"fmt"
+	"github.com/centarium/code-generation/tmp_proto"
+	"github.com/centarium/code-generation/tmp_proto/model"
+	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/wrapperspb"
+	"log/slog"
+	"os"
+	"testing"
+	"time"
+)
+
+func GetLineByUuid(ctx context.Context, db *sqlx.DB, uuid string) (line *model.Line, err error) {
+	line = &model.Line{}
+	query := fmt.Sprintf(`SELECT * FROM lines WHERE uuid = $1`)
+	err = db.GetContext(ctx, line, query, uuid)
+	return
+}
+
+func SliceEqual[T comparable](t *testing.T, actual, expected []T) {
+	t.Helper()
+
+	assert.Equal(t, len(actual), len(expected))
+
+	for k, v := range actual {
+		if v != expected[k] {
+			t.Errorf("got: %v; want: %v", v, expected[k])
+		}
+	}
+}
+
+func TestExpect(t *testing.T) {
+	var expectedResponse *tmp_proto.AddLineResponse
+	expectedResponse = &tmp_proto.AddLineResponse{
+		Result: &tmp_proto.Result{
+			Code: tmp_proto.Result_Success,
+		},
+		Uuid: "sd",
+	}
+
+	response := &tmp_proto.AddLineResponse{
+		Result: &tmp_proto.Result{
+			Code: tmp_proto.Result_Success,
+		},
+		Uuid: "sd",
+	}
+
+	assert.Equal(t, expectedResponse, response)
+}
+
+// Create Line
+// Get Line
+// Update Line
+// Get Updated Line
+// Delete Line
+func TestCRUDLine(t *testing.T) {
+	//get config
+	//grpcClient
+	listen := os.Getenv("LISTEN")
+	databaseConn := os.Getenv("DATABASE_CONNECTION_STRING")
+	driver := "pgx"
+
+	ctx := context.Background()
+	conn, err := grpc.DialContext(ctx, listen,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithBlock(),
+		grpc.FailOnNonTempDialError(true),
+	)
+
+	if err != nil {
+		t.Errorf("Error grpc Dial: %s", err)
+		return
+	}
+
+	defer func() {
+		if errConn := conn.Close(); errConn != nil {
+			slog.Error("Error close conn", errConn)
+		}
+	}()
+
+	client := tmp_proto.NewCodeGenerationClient(conn)
+
+	//get postgres client
+	db, err := sqlx.Connect(driver, databaseConn)
+	if err != nil {
+		t.Errorf("Error connect database: %s", err)
+		return
+	}
+
+	timeNow := time.Now()
+
+	addLineTests := []struct {
+		name                   string
+		request                *tmp_proto.AddLineRequest
+		expectedResponseCode   tmp_proto.ResultResultType
+		expectedError          error
+		expectedDatabaseRecord *model.Line
+	}{
+		{
+			name: "add line success",
+			request: &tmp_proto.AddLineRequest{
+				Number: 1000,
+				Name:   "Test add line",
+			},
+			expectedResponseCode: tmp_proto.Result_Success,
+			expectedError:        nil,
+			expectedDatabaseRecord: &model.Line{
+				Enabled: true,
+				Number:  1000,
+				Name:    "Test add line",
+			},
+		},
+	}
+
+	var response *tmp_proto.AddLineResponse
+	for _, test := range addLineTests {
+		response, err = client.AddLine(ctx, test.request)
+		assert.NotEmpty(t, response.Uuid)
+
+		if err != test.expectedError {
+			t.Errorf("For test name %s, expected error %s, but got %s", test.name, test.expectedError, err)
+			return
+		}
+
+		defer func() {
+			var deleteLineResponse *tmp_proto.DeleteLineResponse
+			deleteLineResponse, err = client.DeleteLine(ctx, &tmp_proto.DeleteLineRequest{Uuid: response.Uuid})
+			assert.Nil(t, err)
+			assert.Equal(t, deleteLineResponse.Result.Code, tmp_proto.Result_Success)
+		}()
+
+		assert.NotNil(t, response.Result)
+		assert.Equal(t, response.Result.Code, test.expectedResponseCode)
+
+		var getLineresponse *tmp_proto.GetLineResponse
+		getLineresponse, err = client.GetLine(ctx, &tmp_proto.GetLineRequest{
+			Uuid: response.Uuid,
+		})
+
+		assert.Nil(t, err)
+		assert.NotNil(t, getLineresponse.Result)
+		assert.Equal(t, getLineresponse.Result.Code, tmp_proto.Result_Success)
+
+		var expectedResponse = &tmp_proto.GetLineResponse{
+			Uuid:   response.Uuid,
+			Number: test.request.Number,
+			Name:   test.request.Name,
+		}
+
+		SliceEqual(t, []interface{}{
+			getLineresponse.Name,
+			getLineresponse.Number,
+			getLineresponse.Uuid,
+		}, []interface{}{
+			expectedResponse.Name,
+			expectedResponse.Number,
+			expectedResponse.Uuid,
+		})
+
+		var line *model.Line
+		line, err = GetLineByUuid(ctx, db, response.GetUuid())
+		assert.Nil(t, err)
+		assert.NotNil(t, line)
+
+		assert.Greater(t, line.Counter, int64(0))
+		test.expectedDatabaseRecord.UUID = line.UUID
+		test.expectedDatabaseRecord.Counter = line.Counter
+
+		assert.Greater(t, line.CreatedAt, timeNow)
+		assert.Greater(t, line.UpdatedAt, timeNow)
+
+		test.expectedDatabaseRecord.CreatedAt = line.CreatedAt
+		test.expectedDatabaseRecord.UpdatedAt = line.UpdatedAt
+		assert.Equal(t, line, test.expectedDatabaseRecord)
+
+		updateLineRequest := &tmp_proto.UpdateLineRequest{
+			Uuid:   &wrapperspb.StringValue{Value: line.UUID},
+			Number: &wrapperspb.Int32Value{Value: 1001},
+			Name:   &wrapperspb.StringValue{Value: "Test"},
+		}
+		var updateLineRespone *tmp_proto.UpdateLineResponse
+		updateLineRespone, err = client.UpdateLine(ctx, updateLineRequest)
+		assert.Nil(t, err)
+		assert.Equal(t, updateLineRespone.Result.Code, tmp_proto.Result_Success)
+
+		line, err = GetLineByUuid(ctx, db, response.GetUuid())
+		assert.Nil(t, err)
+		assert.Equal(t, updateLineRequest.Name.Value, line.Name)
+		assert.Equal(t, updateLineRequest.Number.Value, line.Number)
+		assert.Greater(t, line.UpdatedAt, line.CreatedAt)
+	}
+
+}

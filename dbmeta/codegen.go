@@ -581,6 +581,9 @@ func (c *Config) WriteTemplate(genTemplate *GenTemplate, data map[string]interfa
 	data["daoFQPN"] = c.DaoFQPN
 	data["daoPackageName"] = c.DaoPackageName
 
+	data["integrationTestsFQPN"] = c.IntegrationTestsFQPN
+	data["integrationTestsPackageName"] = c.IntegrationTestsPackageName
+
 	data["UseGuregu"] = c.UseGureguTypes
 
 	data["apiFQPN"] = c.APIFQPN
@@ -892,49 +895,51 @@ type SwaggerInfoDetails struct {
 
 // Config for generating code
 type Config struct {
-	SQLType               string
-	SQLConnStr            string
-	SQLDatabase           string
-	ProtoGoPackage        string
-	ServiceName           string
-	Module                string
-	ModelPackageName      string
-	ModelFQPN             string
-	AddJSONAnnotation     bool
-	AddGormAnnotation     bool
-	AddProtobufAnnotation bool
-	AddXMLAnnotation      bool
-	AddDBAnnotation       bool
-	UseGureguTypes        bool
-	JSONNameFormat        string
-	XMLNameFormat         string
-	ProtobufNameFormat    string
-	DaoPackageName        string
-	DaoFQPN               string
-	APIPackageName        string
-	APIFQPN               string
-	GrpcPackageName       string
-	GrpcFQPN              string
-	Swagger               *SwaggerInfoDetails
-	ServerPort            int
-	ServerHost            string
-	ServerScheme          string
-	ServerListen          string
-	Verbose               bool
-	OutDir                string
-	Overwrite             bool
-	LineEndingCRLF        bool
-	CmdLine               string
-	CmdLineWrapped        string
-	CmdLineArgs           []string
-	FileNamingTemplate    string
-	ModelNamingTemplate   string
-	FieldNamingTemplate   string
-	ContextMap            map[string]interface{}
-	TemplateLoader        TemplateLoader
-	TableInfos            map[string]*ModelInfo
-	FragmentsDir          string
-	fragments             *bytes.Buffer
+	SQLType                     string
+	SQLConnStr                  string
+	SQLDatabase                 string
+	ProtoGoPackage              string
+	ServiceName                 string
+	Module                      string
+	ModelPackageName            string
+	ModelFQPN                   string
+	AddJSONAnnotation           bool
+	AddGormAnnotation           bool
+	AddProtobufAnnotation       bool
+	AddXMLAnnotation            bool
+	AddDBAnnotation             bool
+	UseGureguTypes              bool
+	JSONNameFormat              string
+	XMLNameFormat               string
+	ProtobufNameFormat          string
+	DaoPackageName              string
+	DaoFQPN                     string
+	APIPackageName              string
+	APIFQPN                     string
+	GrpcPackageName             string
+	GrpcFQPN                    string
+	Swagger                     *SwaggerInfoDetails
+	ServerPort                  int
+	ServerHost                  string
+	ServerScheme                string
+	ServerListen                string
+	Verbose                     bool
+	OutDir                      string
+	Overwrite                   bool
+	LineEndingCRLF              bool
+	CmdLine                     string
+	CmdLineWrapped              string
+	CmdLineArgs                 []string
+	FileNamingTemplate          string
+	ModelNamingTemplate         string
+	FieldNamingTemplate         string
+	ContextMap                  map[string]interface{}
+	TemplateLoader              TemplateLoader
+	TableInfos                  map[string]*ModelInfo
+	FragmentsDir                string
+	fragments                   *bytes.Buffer
+	IntegrationTestsPackageName string
+	IntegrationTestsFQPN        string
 }
 
 // NewConfig create a new code config
@@ -967,10 +972,12 @@ func NewConfig(templateLoader TemplateLoader) *Config {
 	modelPackageName := "model"
 	daoPackageName := "dao"
 	apiPackageName := "api"
+	integrationTestsPackageName := "integration_tests"
 
 	conf.ModelPackageName = modelPackageName
 	conf.DaoPackageName = daoPackageName
 	conf.APIPackageName = apiPackageName
+	conf.IntegrationTestsPackageName = integrationTestsPackageName
 
 	conf.AddJSONAnnotation = true
 	conf.AddXMLAnnotation = true
@@ -995,6 +1002,7 @@ func NewConfig(templateLoader TemplateLoader) *Config {
 	conf.ModelFQPN = module + "/" + modelPackageName
 	conf.DaoFQPN = module + "/" + daoPackageName
 	conf.APIFQPN = module + "/" + apiPackageName
+	conf.IntegrationTestsFQPN = module + "/" + integrationTestsPackageName
 
 	if conf.ServerPort == 80 {
 		conf.Swagger.Host = conf.ServerHost

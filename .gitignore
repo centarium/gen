@@ -46,3 +46,4 @@ tests/
 tmp
 tmp_templates
 cfg
+bin

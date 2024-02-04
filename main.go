@@ -42,14 +42,15 @@ var (
 	fieldNamingTemplate = goopt.String([]string{"--field_naming"}, "{{FmtFieldName (stringifyFirstChar .) }}", "field naming template to name structs")
 	fileNamingTemplate  = goopt.String([]string{"--file_naming"}, "{{.}}", "file_naming template to name files")
 
-	daoPackageName  = goopt.String([]string{"--dao"}, "dao", "name to set for dao package")
-	apiPackageName  = goopt.String([]string{"--api"}, "api", "name to set for api package")
-	grpcPackageName = goopt.String([]string{"--grpc"}, "grpc", "name to set for grpc package")
-	outDir          = goopt.String([]string{"--out"}, ".", "output dir")
-	module          = goopt.String([]string{"--module"}, "example.com/example", "module path")
-	overwrite       = goopt.Flag([]string{"--overwrite"}, []string{"--no-overwrite"}, "Overwrite existing files (default)", "disable overwriting files")
-	windows         = goopt.Flag([]string{"--windows"}, []string{}, "use windows line endings in generated files", "")
-	noColorOutput   = goopt.Flag([]string{"--no-color"}, []string{}, "disable color output", "")
+	daoPackageName              = goopt.String([]string{"--dao"}, "dao", "name to set for dao package")
+	integrationTestsPackageName = goopt.String([]string{"--integration_tests"}, "", "name to set for integration_tests package")
+	apiPackageName              = goopt.String([]string{"--api"}, "api", "name to set for api package")
+	grpcPackageName             = goopt.String([]string{"--grpc"}, "grpc", "name to set for grpc package")
+	outDir                      = goopt.String([]string{"--out"}, ".", "output dir")
+	module                      = goopt.String([]string{"--module"}, "example.com/example", "module path")
+	overwrite                   = goopt.Flag([]string{"--overwrite"}, []string{"--no-overwrite"}, "Overwrite existing files (default)", "disable overwriting files")
+	windows                     = goopt.Flag([]string{"--windows"}, []string{}, "use windows line endings in generated files", "")
+	noColorOutput               = goopt.Flag([]string{"--no-color"}, []string{}, "disable color output", "")
 
 	contextFileName  = goopt.String([]string{"--context"}, "", "context file (json) to populate context with")
 	mappingFileName  = goopt.String([]string{"--mapping"}, "", "mapping file (json) to map sql types to golang/protobuf etc")
@@ -343,6 +344,7 @@ func initialize(conf *dbmeta.Config) {
 	if daoPackageName == nil || *daoPackageName == "" {
 		*daoPackageName = "dao"
 	}
+
 	if apiPackageName == nil || *apiPackageName == "" {
 		*apiPackageName = "api"
 	}
@@ -378,6 +380,9 @@ func initialize(conf *dbmeta.Config) {
 
 	conf.DaoPackageName = *daoPackageName
 	conf.DaoFQPN = *module + "/" + *daoPackageName
+
+	conf.IntegrationTestsPackageName = *integrationTestsPackageName
+	conf.IntegrationTestsFQPN = *module + "/" + *integrationTestsPackageName
 
 	conf.APIPackageName = *apiPackageName
 	conf.APIFQPN = *module + "/" + *apiPackageName
@@ -459,6 +464,7 @@ func execTemplate(conf *dbmeta.Config, genTemplate *dbmeta.GenTemplate, data map
 	data["apiFQPN"] = conf.APIFQPN
 	data["modelPackageName"] = *modelPackageName
 	data["daoPackageName"] = *daoPackageName
+	data["integrationTestsPackageName"] = *integrationTestsPackageName
 	data["apiPackageName"] = *apiPackageName
 	data["sqlType"] = *sqlType
 	data["sqlConnStr"] = *sqlConnStr
@@ -502,6 +508,7 @@ func generate(conf *dbmeta.Config) error {
 	//modelDir := filepath.Join(*outDir, *modelPackageName)
 	apiDir := filepath.Join(*outDir, *apiPackageName)
 	daoDir := filepath.Join(*outDir, *daoPackageName)
+	integrationTestsDir := filepath.Join(*outDir, *integrationTestsPackageName)
 
 	err = os.MkdirAll(*outDir, 0777)
 	if err != nil && !*overwrite {
@@ -530,6 +537,22 @@ func generate(conf *dbmeta.Config) error {
 			fmt.Print(au.Red(fmt.Sprintf("unable to create apiDir: %s error: %v\n", apiDir, err)))
 			return err
 		}
+	}
+
+	var IntegrationTestsTemplate *dbmeta.GenTemplate
+	if integrationTestsPackageName != nil && *integrationTestsPackageName != "" {
+
+		err = os.MkdirAll(integrationTestsDir, 0777)
+		if err != nil && !*overwrite {
+			fmt.Print(au.Red(fmt.Sprintf("unable to create integrationTestsDir: %s error: %v\n", integrationTestsDir, err)))
+			return err
+		}
+
+		if IntegrationTestsTemplate, err = LoadTemplate("inregration_tests.go.tmpl"); err != nil {
+			fmt.Print(au.Red(fmt.Sprintf("Error loading template %v\n", err)))
+			return err
+		}
+
 	}
 	//var ModelTmpl *dbmeta.GenTemplate
 	//var ModelBaseTmpl *dbmeta.GenTemplate
@@ -594,7 +617,7 @@ func generate(conf *dbmeta.Config) error {
 		}
 
 		modelInfo := conf.CreateContextForTableFile(tableInfo)
-
+		modelInfo["TablesMetaInfo"] = dbmeta.CreateTablesMetaInfo(tableInfos)
 		/*
 			modelFile := filepath.Join(modelDir, CreateGoSrcFileName(tableName))
 			err = conf.WriteTemplate(ModelTmpl, modelInfo, modelFile)
@@ -611,6 +634,15 @@ func generate(conf *dbmeta.Config) error {
 				os.Exit(1)
 			}
 
+		}
+
+		if *integrationTestsPackageName != "" {
+			outputFile := filepath.Join(integrationTestsDir, CreateGoSrcFileName(tableName))
+			err = conf.WriteTemplate(IntegrationTestsTemplate, modelInfo, outputFile)
+			if err != nil {
+				fmt.Print(au.Red(fmt.Sprintf("Error writing file: %v\n", err)))
+				os.Exit(1)
+			}
 		}
 
 		if *daoGenerate {
